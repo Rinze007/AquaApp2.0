@@ -274,8 +274,7 @@ app.post('/api/submit/:formId', authMiddleware, upload.fields([{ name: 'photos',
     const photos = req.files?.photos || [];
     photos.forEach(p => photoPaths.push(p.path));
 
-    const pdfBuffer = await generatePDF(form, formData, photos, signature, req.user);
-    await sendEmail(form, formData, pdfBuffer, req.user);
+    await sendEmail(form, formData, photos, signature, req.user);
 
     photos.forEach(p => { if (fs.existsSync(p.path)) fs.unlinkSync(p.path); });
     res.json({ success: true, message: 'Formulier succesvol verzonden!' });
@@ -286,121 +285,8 @@ app.post('/api/submit/:formId', authMiddleware, upload.fields([{ name: 'photos',
   }
 });
 
-// ===== PDF GENERATIE =====
-async function generatePDF(form, formData, photos, signature, user) {
-  return new Promise((resolve, reject) => {
-    const doc = new PDFDocument({ margin: 50, size: 'A4', bufferPages: true });
-    const chunks = [];
-    doc.on('data', c => chunks.push(c));
-    doc.on('end', () => resolve(Buffer.concat(chunks)));
-    doc.on('error', reject);
-
-    const BLUE = '#0057B8';
-    const GREY = '#9BA3AE';
-    const DARK = '#1C2833';
-    const LIGHT = '#F5F8FC';
-    const W = doc.page.width;
-
-    // Header blok
-    doc.rect(0, 0, W, 90).fill(BLUE);
-    doc.fillColor('white').font('Helvetica-Bold').fontSize(28).text('aqua+', 50, 22);
-    doc.fontSize(11).font('Helvetica').text(form.name, 50, 56);
-    doc.fillColor(GREY).fontSize(9).text('www.aquaplus.nl', W - 150, 56, { width: 100, align: 'right' });
-
-    // Meta info
-    const now = new Date();
-    const datumStr = now.toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit', year: 'numeric' });
-    const tijdStr = now.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' });
-
-    doc.y = 110;
-    doc.rect(50, doc.y, W - 100, 45).fill(LIGHT);
-    doc.fillColor(DARK).font('Helvetica').fontSize(9);
-    doc.text(`Monteur: ${user.name}`, 60, doc.y + 8);
-    doc.text(`Datum: ${datumStr}  |  Tijd: ${tijdStr}`, 60, doc.y + 8 + 14);
-    doc.y += 55 + 14;
-
-    // Scheidingslijn
-    doc.moveTo(50, doc.y).lineTo(W - 50, doc.y).strokeColor(BLUE).lineWidth(2).stroke();
-    doc.moveDown(0.8);
-
-    // Velden
-    for (const field of (form.fields || [])) {
-      if (field.type === 'signature' || field.type === 'photo') continue;
-
-      const val = formData[field.id];
-      let displayVal = '—';
-
-      if (field.type === 'checkbox' && Array.isArray(val)) {
-        displayVal = val.length > 0 ? val.join(', ') : '—';
-      } else if (val !== undefined && val !== null && val !== '') {
-        displayVal = String(val);
-      }
-
-      if (doc.y > doc.page.height - 100) doc.addPage();
-
-      doc.font('Helvetica-Bold').fontSize(9).fillColor(BLUE).text(field.label.toUpperCase(), 50, doc.y, { width: W - 100 });
-      doc.font('Helvetica').fontSize(10).fillColor(DARK).text(displayVal, 50, doc.y + 2, { width: W - 100, indent: 0 });
-      doc.moveDown(0.6);
-      doc.moveTo(50, doc.y).lineTo(W - 50, doc.y).strokeColor('#E8EEF5').lineWidth(0.5).stroke();
-      doc.moveDown(0.4);
-    }
-
-    // Handtekening
-    if (signature && signature.startsWith('data:image')) {
-      if (doc.y > doc.page.height - 150) doc.addPage();
-      doc.moveDown(0.5);
-      doc.font('Helvetica-Bold').fontSize(9).fillColor(BLUE).text('HANDTEKENING', 50);
-      doc.moveDown(0.3);
-      try {
-        const base64 = signature.replace(/^data:image\/\w+;base64,/, '');
-        const buf = Buffer.from(base64, 'base64');
-        doc.rect(50, doc.y, 220, 85).strokeColor('#D0D8E4').lineWidth(1).stroke();
-        doc.image(buf, 52, doc.y + 2, { width: 216, height: 81 });
-        doc.y += 95;
-      } catch {
-        doc.font('Helvetica').fillColor(DARK).text('(Handtekening kon niet worden weergegeven)');
-      }
-    }
-
-    // Foto's
-    if (photos.length > 0) {
-      if (doc.y > doc.page.height - 220) doc.addPage();
-      doc.moveDown(0.5);
-      doc.font('Helvetica-Bold').fontSize(9).fillColor(BLUE).text("FOTO'S", 50);
-      doc.moveDown(0.4);
-
-      const imgW = 240, imgH = 180, gap = 15;
-      let col = 0, startY = doc.y;
-
-      for (let i = 0; i < photos.length; i++) {
-        const x = 50 + col * (imgW + gap);
-        if (startY + imgH > doc.page.height - 50) { doc.addPage(); startY = 50; col = 0; }
-        try {
-          doc.rect(x, startY, imgW, imgH).strokeColor('#D0D8E4').lineWidth(1).stroke();
-          doc.image(photos[i].path, x + 2, startY + 2, { width: imgW - 4, height: imgH - 4, fit: [imgW - 4, imgH - 4], align: 'center', valign: 'center' });
-        } catch { /* skip */ }
-        col++;
-        if (col >= 2) { col = 0; startY += imgH + gap; }
-      }
-      doc.y = startY + (col > 0 ? imgH + gap : 0);
-    }
-
-    // Paginanummers
-    const range = doc.bufferedPageRange();
-    for (let i = 0; i < range.count; i++) {
-      doc.switchToPage(i);
-      doc.fontSize(8).fillColor(GREY).text(
-        `AquaApp  ·  ${form.name}  ·  Pagina ${i + 1} van ${range.count}`,
-        50, doc.page.height - 30, { width: W - 100, align: 'center' }
-      );
-    }
-
-    doc.end();
-  });
-}
-
 // ===== EMAIL VERZENDING =====
-async function sendEmail(form, formData, pdfBuffer, user) {
+async function sendEmail(form, formData, photos, signature, user) {
   if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
     throw new Error('SMTP niet geconfigureerd. Stel SMTP_USER en SMTP_PASS in als omgevingsvariabelen.');
   }
@@ -432,19 +318,29 @@ async function sendEmail(form, formData, pdfBuffer, user) {
   }
   text += `\n— Verzonden via AquaApp\n`;
 
-  const safeFormName = form.name.replace(/[^a-z0-9\s]/gi, '').trim().replace(/\s+/g, '_');
-  const safeDatum = now.toISOString().split('T')[0];
+  // Foto's als bijlage
+  const attachments = photos.map((p, i) => ({
+    filename: `foto_${i + 1}${path.extname(p.originalname || p.path) || '.jpg'}`,
+    path: p.path,
+    contentType: p.mimetype || 'image/jpeg'
+  }));
+
+  // Handtekening als bijlage
+  if (signature && signature.startsWith('data:image')) {
+    const base64Data = signature.replace(/^data:image\/\w+;base64,/, '');
+    attachments.push({
+      filename: 'handtekening.png',
+      content: Buffer.from(base64Data, 'base64'),
+      contentType: 'image/png'
+    });
+  }
 
   await transporter.sendMail({
     from: `"AquaApp" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
     to: form.email,
     subject: `[AquaApp] ${form.name} — ${user.name} — ${datumStr}`,
     text,
-    attachments: [{
-      filename: `${safeFormName}_${safeDatum}_${user.name.replace(/\s+/g, '_')}.pdf`,
-      content: pdfBuffer,
-      contentType: 'application/pdf'
-    }]
+    attachments
   });
 }
 
