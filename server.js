@@ -47,15 +47,25 @@ if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 if (!fs.existsSync(listsDir)) fs.mkdirSync(listsDir, { recursive: true });
 
 if (!fs.existsSync(path.join(dataDir, 'users.json'))) {
-  writeJSON('users.json', [{
-    id: uuidv4(),
-    username: 'admin',
-    password: bcrypt.hashSync('admin123', 10),
-    name: 'Beheerder',
-    role: 'admin',
-    allowedForms: []
-  }]);
-  console.log('Standaard admin aangemaakt: gebruikersnaam=admin, wachtwoord=admin123');
+  writeJSON('users.json', [
+    {
+      id: uuidv4(),
+      username: 'admin',
+      password: bcrypt.hashSync('admin123', 10),
+      name: 'Beheerder',
+      role: 'admin',
+      allowedForms: []
+    },
+    {
+      id: uuidv4(),
+      username: 'Monteur',
+      password: bcrypt.hashSync('Monteur', 10),
+      name: 'Monteur',
+      role: 'monteur',
+      allowedForms: []
+    }
+  ]);
+  console.log('Standaard gebruikers aangemaakt.');
 }
 if (!fs.existsSync(path.join(dataDir, 'forms.json'))) writeJSON('forms.json', []);
 if (!fs.existsSync(path.join(dataDir, 'lists.json'))) writeJSON('lists.json', []);
