@@ -1,0 +1,1965 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0057B8">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="AquaApp">
+  <link rel="manifest" href="/manifest.json">
+  <title>AquaApp</title>
+  <style>
+:root {
+  --blue: #0057B8;
+  --blue-dark: #003E87;
+  --blue-ink: #0F2744;
+  --blue-light: #EAF3FF;
+  --blue-soft: #F4F8FD;
+  --grey: #94A3B8;
+  --grey-light: #F6F9FC;
+  --surface: rgba(255,255,255,0.94);
+  --surface-solid: #FFFFFF;
+  --surface-alt: #F8FBFE;
+  --border: #D9E5F1;
+  --border-strong: #C7D8E8;
+  --text: #1E293B;
+  --text-muted: #64748B;
+  --white: #FFFFFF;
+  --success: #1F9D61;
+  --danger: #D64545;
+  --warning: #D98A00;
+  --radius-sm: 10px;
+  --radius: 16px;
+  --radius-lg: 24px;
+  --shadow-xs: 0 2px 8px rgba(15,39,68,0.04);
+  --shadow: 0 10px 30px rgba(15,39,68,0.08);
+  --shadow-lg: 0 22px 50px rgba(15,39,68,0.14);
+  --shadow-focus: 0 0 0 4px rgba(0,87,184,0.12);
+  --gradient-brand: linear-gradient(135deg, #0B2540 0%, #004FAD 52%, #0A79E8 100%);
+  --gradient-brand-soft: linear-gradient(135deg, #EAF3FF 0%, #F7FAFE 100%);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Inter, sans-serif;
+  background:
+    radial-gradient(circle at top left, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 25%),
+    linear-gradient(180deg, #F5F9FD 0%, #ECF3F9 100%);
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.45;
+}
+
+#app { min-height: 100vh; }
+
+a { color: inherit; }
+button, input, select, textarea { font: inherit; }
+
+/* ===== UTILITIES ===== */
+.hidden { display: none !important; }
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.gap-1 { gap: 8px; }
+.gap-2 { gap: 16px; }
+.mt-1 { margin-top: 8px; }
+.mt-2 { margin-top: 16px; }
+.w-full { width: 100%; }
+.text-sm { font-size: 13px; }
+.text-muted { color: var(--text-muted); }
+.bold { font-weight: 600; }
+
+/* ===== LOADER ===== */
+.loader-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  flex-direction: column;
+  gap: 16px;
+}
+.spinner {
+  width: 44px;
+  height: 44px;
+  border: 4px solid rgba(0,87,184,0.12);
+  border-top-color: var(--blue);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ===== LOGO ===== */
+.logo {
+  font-size: 28px;
+  font-weight: 900;
+  color: var(--blue);
+  letter-spacing: -1.2px;
+  position: relative;
+  display: inline-block;
+  text-transform: lowercase;
+}
+.logo .crown {
+  font-size: 12px;
+  color: rgba(15,39,68,0.45);
+  position: absolute;
+  top: -9px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.logo-white { color: var(--white); }
+.logo-white .crown { color: rgba(255,255,255,0.72); }
+
+/* ===== LOGIN ===== */
+.login-wrap {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at top left, rgba(255,255,255,0.14), transparent 28%),
+    radial-gradient(circle at bottom right, rgba(255,255,255,0.08), transparent 22%),
+    var(--gradient-brand);
+}
+.login-card {
+  background: rgba(255,255,255,0.97);
+  backdrop-filter: blur(8px);
+  border-radius: 28px;
+  padding: 42px 34px 34px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid rgba(255,255,255,0.28);
+}
+.login-logo { text-align: center; margin-bottom: 30px; }
+.login-logo .logo { font-size: 42px; }
+.login-logo .logo .crown { font-size: 16px; top: -14px; }
+.login-subtitle {
+  color: var(--text-muted);
+  font-size: 14px;
+  margin-top: 10px;
+  line-height: 1.55;
+}
+
+/* ===== FORM ELEMENTS ===== */
+.form-group { margin-bottom: 16px; }
+.form-group label {
+  display: block;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 7px;
+}
+.form-control {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  font-size: 15px;
+  color: var(--text);
+  background: var(--surface-solid);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+  outline: none;
+}
+.form-control:hover {
+  border-color: var(--border-strong);
+}
+.form-control:focus {
+  border-color: var(--blue);
+  box-shadow: var(--shadow-focus);
+}
+.form-control::placeholder { color: #97A6B8; }
+textarea.form-control {
+  resize: vertical;
+  min-height: 96px;
+}
+select.form-control { cursor: pointer; }
+
+/* ===== BUTTONS ===== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 18px;
+  border-radius: 14px;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  border: none;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.btn:hover { transform: translateY(-1px); }
+.btn:active { transform: translateY(0) scale(0.985); }
+.btn-primary {
+  background: linear-gradient(135deg, var(--blue), #2D82E8);
+  color: var(--white);
+  box-shadow: 0 12px 24px rgba(0,87,184,0.22);
+}
+.btn-primary:hover {
+  box-shadow: 0 16px 30px rgba(0,87,184,0.28);
+}
+.btn-outline {
+  background: var(--white);
+  color: var(--blue);
+  border: 1.5px solid var(--border);
+}
+.btn-outline:hover {
+  background: var(--blue-light);
+  border-color: #BFD4EB;
+}
+.btn-danger {
+  background: linear-gradient(135deg, #E05555, #C73E3E);
+  color: var(--white);
+}
+.btn-danger:hover { box-shadow: 0 10px 22px rgba(214,69,69,0.22); }
+.btn-ghost {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1.5px solid var(--border);
+}
+.btn-ghost:hover { background: var(--surface-alt); }
+.btn-success {
+  background: linear-gradient(135deg, #1F9D61, #2DBE77);
+  color: var(--white);
+}
+.btn-sm { padding: 7px 12px; font-size: 12px; border-radius: 12px; }
+.btn-lg { padding: 14px 20px; font-size: 16px; width: 100%; border-radius: 16px; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; transform: none; }
+
+/* ===== ALERTS ===== */
+.alert {
+  padding: 14px 16px;
+  border-radius: 16px;
+  font-size: 14px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  border: 1px solid transparent;
+  box-shadow: var(--shadow-xs);
+}
+.alert-error { background: #FEF2F2; color: #B42318; border-color: #F9C8C8; }
+.alert-success { background: #EEF9F3; color: #16794B; border-color: #B9E4CA; }
+.alert-info { background: #EFF6FF; color: #1D4E89; border-color: #C7DCF6; }
+
+/* ===== NAV ===== */
+.topnav {
+  background: linear-gradient(90deg, #0D223B 0%, #114178 40%, var(--blue) 100%);
+  color: var(--white);
+  padding: 0 24px;
+  height: 70px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 10px 30px rgba(15,39,68,0.18);
+  backdrop-filter: blur(6px);
+}
+.topnav .logo { font-size: 24px; color: var(--white); }
+.topnav .logo .crown { color: rgba(255,255,255,0.72); font-size: 11px; top: -9px; }
+.nav-user {
+  font-size: 13px;
+  opacity: 0.96;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.12);
+}
+.nav-logout {
+  background: rgba(255,255,255,0.14);
+  color: var(--white);
+  border: 1px solid rgba(255,255,255,0.18);
+  padding: 8px 14px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+}
+.nav-logout:hover { background: rgba(255,255,255,0.22); transform: translateY(-1px); }
+
+/* ===== TABS ===== */
+.tabs {
+  background: rgba(255,255,255,0.82);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(217,229,241,0.95);
+  padding: 0 24px;
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  position: sticky;
+  top: 70px;
+  z-index: 90;
+}
+.tab {
+  padding: 16px 18px 14px;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  white-space: nowrap;
+  transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+  user-select: none;
+  border-radius: 12px 12px 0 0;
+}
+.tab:hover { color: var(--blue); background: rgba(234,243,255,0.72); }
+.tab.active { color: var(--blue); border-bottom-color: var(--blue); }
+
+/* ===== CONTENT ===== */
+.page-content {
+  padding: 32px 24px 28px;
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+/* ===== CARDS ===== */
+.card {
+  background: var(--surface);
+  backdrop-filter: blur(6px);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+  padding: 24px;
+  margin-bottom: 18px;
+  border: 1px solid rgba(217,229,241,0.95);
+}
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.card-title {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--text);
+}
+.card-subtitle {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* ===== TABLE ===== */
+.table-wrap {
+  overflow-x: auto;
+  border-radius: 18px;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+th {
+  text-align: left;
+  padding: 12px 14px;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  background: #F6FAFE;
+  border-bottom: 1px solid var(--border);
+}
+td {
+  padding: 14px;
+  border-bottom: 1px solid rgba(217,229,241,0.92);
+  vertical-align: middle;
+}
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(248,251,254,0.95); }
+.badge {
+  display: inline-block;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.badge-blue { background: #EAF3FF; color: var(--blue); }
+.badge-grey { background: #F1F5F9; color: var(--text-muted); }
+
+/* ===== FORM BUILDER ===== */
+.field-card {
+  background: linear-gradient(180deg, #F9FBFE 0%, #F4F8FC 100%);
+  border: 1.5px solid var(--border);
+  border-radius: 18px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+.field-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.field-number {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--blue), #2A7DE1);
+  color: white;
+  font-size: 12px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.field-row { display: flex; gap: 12px; flex-wrap: wrap; }
+.field-row .form-group { flex: 1; min-width: 150px; margin-bottom: 8px; }
+.options-list { margin-top: 8px; }
+.option-row { display: flex; gap: 8px; margin-bottom: 6px; align-items: center; }
+.option-row .form-control { flex: 1; padding: 9px 12px; font-size: 13px; }
+.toggle-row { display: flex; align-items: center; gap: 10px; }
+.toggle { position: relative; width: 44px; height: 24px; }
+.toggle input { opacity: 0; width: 0; height: 0; }
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background: #D4DCE6;
+  border-radius: 999px;
+  transition: 0.3s;
+}
+.toggle-slider:before {
+  position: absolute;
+  content: '';
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background: white;
+  border-radius: 50%;
+  transition: 0.3s;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.18);
+}
+.toggle input:checked + .toggle-slider { background: var(--blue); }
+.toggle input:checked + .toggle-slider:before { transform: translateX(20px); }
+
+/* ===== MONTEUR FORM TILES ===== */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 18px;
+}
+.form-tile {
+  background: linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(248,251,254,0.98) 100%);
+  border-radius: 20px;
+  padding: 24px 18px;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  border: 1px solid rgba(217,229,241,0.95);
+  transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+  text-align: center;
+}
+.form-tile:hover,
+.form-tile:active {
+  border-color: #BFD4EB;
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-3px);
+}
+.form-tile-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+  background: var(--gradient-brand-soft);
+  color: var(--blue);
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 14px;
+  box-shadow: inset 0 0 0 1px rgba(0,87,184,0.06);
+}
+.form-tile-name {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+.form-tile-fields { font-size: 12px; color: var(--text-muted); }
+
+/* ===== FORM FILL ===== */
+.form-fill-header {
+  background: linear-gradient(90deg, #0D223B 0%, #114178 42%, var(--blue) 100%);
+  color: white;
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 10px 28px rgba(15,39,68,0.16);
+}
+.back-btn {
+  background: rgba(255,255,255,0.16);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: white;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.back-btn:hover { background: rgba(255,255,255,0.24); }
+.form-fill-title { font-size: 18px; font-weight: 800; }
+.form-fill-body { padding: 24px; max-width: 760px; margin: 0 auto; }
+
+/* ===== SIGNATURE PAD ===== */
+.sig-wrap {
+  border: 1.5px solid var(--border);
+  border-radius: 18px;
+  background: var(--white);
+  overflow: hidden;
+  box-shadow: var(--shadow-xs);
+}
+.sig-canvas {
+  display: block;
+  width: 100%;
+  height: 180px;
+  cursor: crosshair;
+  touch-action: none;
+}
+.sig-actions {
+  display: flex;
+  gap: 8px;
+  padding: 10px;
+  background: #F8FBFE;
+  border-top: 1px solid var(--border);
+}
+
+/* ===== PHOTO PREVIEW ===== */
+.photo-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+.photo-thumb {
+  position: relative;
+  width: 84px;
+  height: 84px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1.5px solid var(--border);
+  box-shadow: var(--shadow-xs);
+}
+.photo-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.photo-remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: var(--danger);
+  color: white;
+  border: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  line-height: 1;
+}
+
+/* ===== SEARCHABLE DROPDOWN ===== */
+.dropdown-wrap { position: relative; }
+.dropdown-list {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  right: 0;
+  background: var(--white);
+  border: 1.5px solid #BFD4EB;
+  border-radius: 0 0 16px 16px;
+  max-height: 220px;
+  overflow-y: auto;
+  z-index: 50;
+  box-shadow: var(--shadow);
+}
+.dropdown-item {
+  padding: 10px 14px;
+  cursor: pointer;
+  font-size: 14px;
+  border-bottom: 1px solid var(--border);
+}
+.dropdown-item:last-child { border-bottom: none; }
+.dropdown-item:hover { background: var(--blue-light); color: var(--blue); }
+.dropdown-item.selected { background: var(--blue); color: white; }
+
+/* ===== MODAL ===== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15,23,42,0.42);
+  z-index: 200;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0;
+  backdrop-filter: blur(3px);
+}
+@media (min-width: 600px) {
+  .modal-overlay { align-items: center; padding: 20px; }
+}
+.modal {
+  background: var(--white);
+  border-radius: 24px 24px 0 0;
+  width: 100%;
+  max-width: 580px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 24px;
+  box-shadow: var(--shadow-lg);
+}
+@media (min-width: 600px) {
+  .modal { border-radius: 24px; }
+}
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.modal-title { font-size: 19px; font-weight: 800; }
+.modal-close {
+  background: #F2F6FA;
+  border: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+/* ===== EMPTY STATE ===== */
+.empty { text-align: center; padding: 56px 20px; color: var(--text-muted); }
+.empty-icon { font-size: 50px; margin-bottom: 14px; }
+.empty-text { font-size: 16px; font-weight: 800; color: var(--text); margin-bottom: 6px; }
+.empty-sub { font-size: 13px; }
+
+/* ===== SECTION HEADER ===== */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.section-title { font-size: 20px; font-weight: 800; }
+
+/* ===== CHECKBOX GROUP ===== */
+.check-group { display: flex; flex-direction: column; gap: 8px; }
+.check-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px;
+  background: #F8FBFE;
+  border: 1px solid rgba(217,229,241,0.96);
+  border-radius: 12px;
+  cursor: pointer;
+}
+.check-item input[type="checkbox"], .check-item input[type="radio"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--blue);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.check-item label { font-size: 14px; cursor: pointer; flex: 1; }
+
+/* ===== PROGRESS ===== */
+.submit-wrap {
+  position: sticky;
+  bottom: 0;
+  background: rgba(255,255,255,0.96);
+  backdrop-filter: blur(10px);
+  padding: 16px 20px;
+  border-top: 1px solid var(--border);
+  box-shadow: 0 -8px 28px rgba(15,39,68,0.08);
+}
+
+/* ===== LIST UPLOAD ===== */
+.upload-zone {
+  border: 2px dashed #BFD4EB;
+  border-radius: 18px;
+  padding: 34px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: linear-gradient(180deg, #FAFCFE 0%, #F5F9FD 100%);
+}
+.upload-zone:hover, .upload-zone.dragover {
+  border-color: var(--blue);
+  background: var(--blue-light);
+}
+.upload-zone input { display: none; }
+.upload-icon { font-size: 38px; margin-bottom: 10px; }
+.upload-text { font-size: 14px; font-weight: 800; color: var(--text); margin-bottom: 4px; }
+.upload-sub { font-size: 12px; color: var(--text-muted); }
+
+/* ===== ALLOWED USERS CHECKBOXES ===== */
+.user-check-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 10px;
+  background: #FBFDFF;
+}
+.user-check-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.user-check-item:hover { background: var(--grey-light); }
+.user-check-item input { width: 16px; height: 16px; accent-color: var(--blue); }
+.user-check-item label { font-size: 13px; cursor: pointer; }
+
+/* ===== MOBILE ===== */
+@media (max-width: 760px) {
+  .topnav {
+    height: auto;
+    padding: 14px 16px;
+    align-items: flex-start;
+    gap: 10px;
+    flex-direction: column;
+  }
+  .tabs {
+    top: 92px;
+    padding: 0 12px;
+  }
+  .page-content,
+  .form-fill-body {
+    padding: 18px 16px 22px;
+  }
+  .card { padding: 18px; border-radius: 18px; }
+  .field-row .form-group { min-width: 100%; }
+  .section-header,
+  .card-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .login-card {
+    padding: 32px 22px 24px;
+    border-radius: 22px;
+  }
+  .login-logo .logo {
+    font-size: 36px;
+  }
+  .page-content { padding: 16px 14px 20px; }
+  .topnav { padding: 12px 14px; }
+  .tabs { top: 98px; }
+  .tab { padding: 14px 14px 12px; font-size: 13px; }
+  .btn-lg { font-size: 15px; }
+  .sig-canvas { height: 160px; }
+}
+  </style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+// ===================================================
+// STATE
+// ===================================================
+let S = {
+  token: localStorage.getItem('aq_token'),
+  user: JSON.parse(localStorage.getItem('aq_user') || 'null'),
+  view: 'loading',
+  adminTab: 'forms',
+  // Admin data
+  forms: [], users: [], lists: [],
+  // Form builder
+  editingForm: null,
+  builderState: null,
+  // Monteur
+  myForms: [],
+  mySubmissions: [],
+  monteurTab: 'forms',
+  fillingForm: null,
+  formValues: {},
+  signatureData: null,
+  photoFiles: [],
+  // UI
+  loading: false, error: null, success: null,
+  modal: null,
+  dropdownOpen: null,
+  listItems: {}
+};
+
+// ===================================================
+// API
+// ===================================================
+async function api(method, url, data = null, isForm = false) {
+  const headers = {};
+  if (S.token) headers['Authorization'] = `Bearer ${S.token}`;
+  if (!isForm && data) headers['Content-Type'] = 'application/json';
+  const res = await fetch(url, {
+    method,
+    headers,
+    body: isForm ? data : (data ? JSON.stringify(data) : null)
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.error || 'Er is een fout opgetreden');
+  return json;
+}
+
+// ===================================================
+// RENDER DISPATCHER
+// ===================================================
+function render() {
+  const app = document.getElementById('app');
+  if (S.view === 'loading') { app.innerHTML = `<div class="loader-wrap"><div class="spinner"></div><p style="color:var(--blue);font-weight:600">Laden...</p></div>`; return; }
+  if (S.view === 'login') { app.innerHTML = renderLogin(); bindLogin(); return; }
+  if (S.view === 'admin') { app.innerHTML = renderAdmin(); bindAdmin(); return; }
+  if (S.view === 'monteur') { app.innerHTML = renderMonteur(); bindMonteur(); return; }
+}
+
+// ===================================================
+// LOGIN
+// ===================================================
+function renderLogin() {
+  return `
+  <div class="login-wrap">
+    <div class="login-card">
+      <div class="login-logo">
+        <div class="logo">
+          <span class="crown">♛</span>
+          aqua+
+        </div>
+        <p class="login-subtitle">Inloggen voor monteurs & beheerders</p>
+      </div>
+      ${S.error ? `<div class="alert alert-error">⚠ ${S.error}</div>` : ''}
+      <div class="form-group">
+        <label>Gebruikersnaam</label>
+        <input class="form-control" id="loginUser" type="text" placeholder="Gebruikersnaam" autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label>Wachtwoord</label>
+        <input class="form-control" id="loginPass" type="password" placeholder="Wachtwoord" autocomplete="current-password">
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;margin:12px 0 4px;">
+        <input type="checkbox" id="rememberMe" style="width:18px;height:18px;accent-color:var(--blue);cursor:pointer;" ${S.rememberMe ? 'checked' : ''}>
+        <label for="rememberMe" style="font-size:14px;color:var(--text-muted);cursor:pointer;">Inloggegevens onthouden</label>
+      </div>
+      <button class="btn btn-primary btn-lg" id="loginBtn" style="margin-top:8px">
+        ${S.loading ? '<span class="spinner" style="width:18px;height:18px;border-width:2px"></span>' : 'Inloggen'}
+      </button>
+    </div>
+  </div>`;
+}
+
+function bindLogin() {
+  // Herstel opgeslagen gebruikersnaam indien aanwezig
+  const savedUser = localStorage.getItem('aq_saved_user');
+  const savedPass = localStorage.getItem('aq_saved_pass');
+  if (savedUser) {
+    const uField = document.getElementById('loginUser');
+    const pField = document.getElementById('loginPass');
+    if (uField) uField.value = savedUser;
+    if (pField && savedPass) pField.value = savedPass;
+    const cb = document.getElementById('rememberMe');
+    if (cb) cb.checked = true;
+  }
+
+  const go = async () => {
+    const u = document.getElementById('loginUser')?.value?.trim();
+    const p = document.getElementById('loginPass')?.value;
+    const remember = document.getElementById('rememberMe')?.checked;
+    if (!u || !p) { S.error = 'Vul beide velden in'; render(); return; }
+    S.loading = true; S.error = null; S.rememberMe = remember; render();
+    try {
+      const data = await api('POST', '/api/login', { username: u, password: p });
+      S.token = data.token; S.user = data.user;
+      localStorage.setItem('aq_token', S.token);
+      localStorage.setItem('aq_user', JSON.stringify(S.user));
+      if (remember) {
+        localStorage.setItem('aq_saved_user', u);
+        localStorage.setItem('aq_saved_pass', p);
+      } else {
+        localStorage.removeItem('aq_saved_user');
+        localStorage.removeItem('aq_saved_pass');
+      }
+      await initAfterLogin();
+    } catch(e) { S.error = e.message; S.loading = false; render(); }
+  };
+  document.getElementById('loginBtn')?.addEventListener('click', go);
+  document.getElementById('loginPass')?.addEventListener('keydown', e => e.key === 'Enter' && go());
+  if (!document.getElementById('loginUser')?.value) document.getElementById('loginUser')?.focus();
+  else document.getElementById('loginPass')?.focus();
+}
+
+async function initAfterLogin() {
+  S.loading = false;
+  if (S.user.role === 'admin') {
+    await loadAdminData();
+    S.view = 'admin';
+  } else {
+    await loadMonteurData();
+    S.view = 'monteur';
+  }
+  render();
+}
+
+// ===================================================
+// ADMIN
+// ===================================================
+async function loadAdminData() {
+  const [forms, users, lists] = await Promise.all([
+    api('GET', '/api/admin/forms'),
+    api('GET', '/api/admin/users'),
+    api('GET', '/api/admin/lists')
+  ]);
+  S.forms = forms; S.users = users; S.lists = lists;
+}
+
+function renderAdmin() {
+  if (S.editingForm !== null) return renderFormBuilder();
+  return `
+  ${renderTopNav()}
+  <div class="tabs">
+    <div class="tab ${S.adminTab==='forms'?'active':''}" data-tab="forms">📋 Formulieren</div>
+    <div class="tab ${S.adminTab==='users'?'active':''}" data-tab="users">👤 Gebruikers</div>
+    <div class="tab ${S.adminTab==='lists'?'active':''}" data-tab="lists">📂 Lijsten</div>
+  </div>
+  <div class="page-content">
+    ${S.error ? `<div class="alert alert-error">⚠ ${S.error}</div>` : ''}
+    ${S.success ? `<div class="alert alert-success">✓ ${S.success}</div>` : ''}
+    ${S.adminTab === 'forms' ? renderAdminForms() : ''}
+    ${S.adminTab === 'users' ? renderAdminUsers() : ''}
+    ${S.adminTab === 'lists' ? renderAdminLists() : ''}
+  </div>
+  ${S.modal ? renderModal() : ''}`;
+}
+
+function bindAdmin() {
+  // Tabs
+  document.querySelectorAll('.tab[data-tab]').forEach(t =>
+    t.addEventListener('click', async () => {
+      S.adminTab = t.dataset.tab; S.error = null; S.success = null; render();
+    })
+  );
+  document.getElementById('logoutBtn')?.addEventListener('click', logout);
+
+  if (S.adminTab === 'forms') bindAdminForms();
+  if (S.adminTab === 'users') bindAdminUsers();
+  if (S.adminTab === 'lists') bindAdminLists();
+  if (S.modal) bindModal();
+}
+
+// --- ADMIN FORMS ---
+function renderAdminForms() {
+  return `
+  <div class="section-header">
+    <h2 class="section-title">Formulieren</h2>
+    <button class="btn btn-primary" id="newFormBtn">+ Nieuw formulier</button>
+  </div>
+  ${S.forms.length === 0 ? `
+    <div class="empty">
+      <div class="empty-icon">📋</div>
+      <p class="empty-text">Nog geen formulieren</p>
+      <p class="empty-sub">Maak je eerste formulier aan met de knop hierboven.</p>
+    </div>` : `
+  <div class="card" style="padding:0;overflow:hidden">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Naam</th><th>Velden</th><th>E-mail</th><th>Monteurs</th><th></th></tr></thead>
+        <tbody>
+        ${S.forms.map(f => {
+          const assignedCount = S.users.filter(u => u.allowedForms?.includes(f.id)).length;
+          return `<tr>
+            <td><strong>${esc(f.name)}</strong></td>
+            <td><span class="badge badge-blue">${(f.fields||[]).length} velden</span></td>
+            <td class="text-sm text-muted">${esc(f.email || '—')}</td>
+            <td><span class="badge badge-grey">${assignedCount} monteur${assignedCount!==1?'s':''}</span></td>
+            <td>
+              <div class="flex gap-1">
+                <button class="btn btn-ghost btn-sm edit-form-btn" data-id="${f.id}">✏️ Bewerk</button>
+                <button class="btn btn-danger btn-sm del-form-btn" data-id="${f.id}" data-name="${esc(f.name)}">🗑</button>
+              </div>
+            </td>
+          </tr>`;
+        }).join('')}
+        </tbody>
+      </table>
+    </div>
+  </div>`}`;
+}
+
+function bindAdminForms() {
+  document.getElementById('newFormBtn')?.addEventListener('click', () => {
+    S.editingForm = 'new';
+    S.builderState = { name: '', email: '', fields: [], allowedUsers: [] };
+    render();
+  });
+  document.querySelectorAll('.edit-form-btn').forEach(b => b.addEventListener('click', () => {
+    const form = S.forms.find(f => f.id === b.dataset.id);
+    if (!form) return;
+    S.editingForm = form.id;
+    S.builderState = {
+      name: form.name || '',
+      email: form.email || '',
+      fields: JSON.parse(JSON.stringify(form.fields || [])),
+      allowedUsers: S.users.filter(u => u.allowedForms?.includes(form.id)).map(u => u.id)
+    };
+    render();
+  }));
+  document.querySelectorAll('.del-form-btn').forEach(b => b.addEventListener('click', () => {
+    S.modal = { type: 'confirm', title: 'Formulier verwijderen', message: `Weet je zeker dat je <strong>${b.dataset.name}</strong> wilt verwijderen?`, action: 'deleteForm', id: b.dataset.id };
+    render();
+  }));
+}
+
+// --- FORM BUILDER ---
+function renderFormBuilder() {
+  const bs = S.builderState;
+  const fieldTypeLabels = { text:'Tekst', textarea:'Tekstvak (groot)', number:'Nummer', email:'E-mail', phone:'Telefoon', date:'Datum', multiselect:'Meerkeuze (één antwoord)', checkbox:'Checkboxes (meerdere)', signature:'Handtekening', photo:'Foto upload', list:"Keuze uit lijst" };
+  const monteurs = S.users.filter(u => u.role !== 'admin');
+
+  return `
+  ${renderTopNav()}
+  <div class="form-fill-header">
+    <button class="back-btn" id="backFromBuilder">←</button>
+    <div>
+      <div class="form-fill-title">${S.editingForm === 'new' ? 'Nieuw formulier' : 'Formulier bewerken'}</div>
+      <div style="font-size:12px;opacity:0.8">${bs.name || 'Naamloos'}</div>
+    </div>
+    <button class="btn btn-success btn-sm" id="saveFormBtn">💾 Opslaan</button>
+  </div>
+
+  <div class="page-content">
+    ${S.error ? `<div class="alert alert-error">⚠ ${S.error}</div>` : ''}
+
+    <div class="card">
+      <p class="card-title" style="margin-bottom:14px">Basisinformatie</p>
+      <div class="form-group">
+        <label>Naam formulier *</label>
+        <input class="form-control" id="bs_name" type="text" placeholder="bijv. Onderhoudsrapport" value="${esc(bs.name)}">
+      </div>
+      <div class="form-group">
+        <label>Bestemming e-mailadres *</label>
+        <input class="form-control" id="bs_email" type="email" placeholder="ontvanger@bedrijf.nl" value="${esc(bs.email)}">
+      </div>
+    </div>
+
+    ${monteurs.length > 0 ? `
+    <div class="card">
+      <p class="card-title" style="margin-bottom:10px">Toegang monteurs</p>
+      <p class="text-sm text-muted" style="margin-bottom:10px">Selecteer welke monteurs dit formulier mogen gebruiken.</p>
+      <div class="user-check-list">
+        ${monteurs.map(u => `
+          <div class="user-check-item">
+            <input type="checkbox" id="au_${u.id}" data-uid="${u.id}" class="au-check" ${bs.allowedUsers.includes(u.id)?'checked':''}>
+            <label for="au_${u.id}">${esc(u.name)} <span class="text-muted text-sm">(${esc(u.username)})</span></label>
+          </div>`).join('')}
+      </div>
+    </div>` : ''}
+
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <p class="card-title">Velden</p>
+          <p class="card-subtitle">${bs.fields.length} veld${bs.fields.length!==1?'en':''} toegevoegd</p>
+        </div>
+        <button class="btn btn-outline btn-sm" id="addFieldBtn">+ Veld toevoegen</button>
+      </div>
+      ${bs.fields.length === 0 ? `<div class="empty" style="padding:24px"><p class="empty-sub">Voeg velden toe met de knop hierboven.</p></div>` : ''}
+      <div id="fieldsList">
+        ${bs.fields.map((f, i) => renderFieldCard(f, i, fieldTypeLabels)).join('')}
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderFieldCard(f, i, labels) {
+  const needsOptions = ['multiselect', 'checkbox'].includes(f.type);
+  const needsList = f.type === 'list';
+  const options = f.options || [];
+  return `
+  <div class="field-card" data-idx="${i}">
+    <div class="field-header">
+      <div class="flex items-center gap-1">
+        <span class="field-number">${i+1}</span>
+        <strong style="font-size:14px">${esc(f.label || 'Naamloos veld')}</strong>
+      </div>
+      <div class="flex gap-1">
+        ${i > 0 ? `<button class="btn btn-ghost btn-sm move-up-btn" data-idx="${i}">↑</button>` : ''}
+        ${i < (S.builderState.fields.length-1) ? `<button class="btn btn-ghost btn-sm move-down-btn" data-idx="${i}">↓</button>` : ''}
+        <button class="btn btn-danger btn-sm del-field-btn" data-idx="${i}">🗑</button>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="form-group">
+        <label>Label</label>
+        <input class="form-control field-label" data-idx="${i}" type="text" placeholder="Veldnaam" value="${esc(f.label||'')}">
+      </div>
+      <div class="form-group">
+        <label>Type</label>
+        <select class="form-control field-type" data-idx="${i}">
+          ${Object.entries(labels).map(([v,t]) => `<option value="${v}" ${f.type===v?'selected':''}>${t}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <div class="toggle-row">
+      <label class="toggle"><input type="checkbox" class="field-required" data-idx="${i}" ${f.required?'checked':''}><span class="toggle-slider"></span></label>
+      <span class="text-sm">Verplicht veld</span>
+    </div>
+    ${needsOptions ? `
+    <div class="options-list" style="margin-top:12px">
+      <label style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Keuze-opties</label>
+      <div id="opts_${i}">
+        ${options.map((o,oi) => `
+          <div class="option-row">
+            <input class="form-control opt-val" data-fidx="${i}" data-oi="${oi}" type="text" placeholder="Optie ${oi+1}" value="${esc(o)}">
+            <button class="btn btn-danger btn-sm del-opt-btn" data-fidx="${i}" data-oi="${oi}">✕</button>
+          </div>`).join('')}
+      </div>
+      <button class="btn btn-ghost btn-sm add-opt-btn" data-idx="${i}" style="margin-top:6px">+ Optie toevoegen</button>
+    </div>` : ''}
+    ${needsList ? `
+    <div class="form-group" style="margin-top:10px">
+      <label>Kies lijst</label>
+      <select class="form-control field-listid" data-idx="${i}">
+        <option value="">-- Selecteer een lijst --</option>
+        ${S.lists.map(l => `<option value="${l.id}" ${f.listId===l.id?'selected':''}>${esc(l.name)} (${l.count} items)</option>`).join('')}
+      </select>
+    </div>` : ''}
+  </div>`;
+}
+
+function bindFormBuilder() {
+  document.getElementById('backFromBuilder')?.addEventListener('click', () => {
+    S.editingForm = null; S.builderState = null; S.error = null; render();
+  });
+
+  // Sync base fields
+  document.getElementById('bs_name')?.addEventListener('input', e => S.builderState.name = e.target.value);
+  document.getElementById('bs_email')?.addEventListener('input', e => S.builderState.email = e.target.value);
+
+  // Allowed users
+  document.querySelectorAll('.au-check').forEach(cb =>
+    cb.addEventListener('change', () => {
+      S.builderState.allowedUsers = Array.from(document.querySelectorAll('.au-check:checked')).map(c => c.dataset.uid);
+    })
+  );
+
+  // Add field
+  document.getElementById('addFieldBtn')?.addEventListener('click', () => {
+    S.builderState.fields.push({ id: 'f_' + Date.now(), type: 'text', label: '', required: false, options: [] });
+    render();
+  });
+
+  // Field controls
+  document.querySelectorAll('.del-field-btn').forEach(b => b.addEventListener('click', () => {
+    S.builderState.fields.splice(parseInt(b.dataset.idx), 1); render();
+  }));
+  document.querySelectorAll('.move-up-btn').forEach(b => b.addEventListener('click', () => {
+    const i = parseInt(b.dataset.idx);
+    [S.builderState.fields[i-1], S.builderState.fields[i]] = [S.builderState.fields[i], S.builderState.fields[i-1]]; render();
+  }));
+  document.querySelectorAll('.move-down-btn').forEach(b => b.addEventListener('click', () => {
+    const i = parseInt(b.dataset.idx);
+    [S.builderState.fields[i+1], S.builderState.fields[i]] = [S.builderState.fields[i], S.builderState.fields[i+1]]; render();
+  }));
+  document.querySelectorAll('.field-label').forEach(inp => inp.addEventListener('input', e => {
+    S.builderState.fields[parseInt(e.target.dataset.idx)].label = e.target.value;
+    // Update header without full re-render
+    const card = inp.closest('.field-card');
+    if (card) card.querySelector('strong').textContent = e.target.value || 'Naamloos veld';
+  }));
+  document.querySelectorAll('.field-type').forEach(sel => sel.addEventListener('change', e => {
+    const idx = parseInt(e.target.dataset.idx);
+    S.builderState.fields[idx].type = e.target.value;
+    if (!['multiselect','checkbox'].includes(e.target.value)) S.builderState.fields[idx].options = [];
+    if (e.target.value !== 'list') delete S.builderState.fields[idx].listId;
+    render();
+  }));
+  document.querySelectorAll('.field-required').forEach(cb => cb.addEventListener('change', e => {
+    S.builderState.fields[parseInt(e.target.dataset.idx)].required = e.target.checked;
+  }));
+  document.querySelectorAll('.field-listid').forEach(sel => sel.addEventListener('change', e => {
+    S.builderState.fields[parseInt(e.target.dataset.idx)].listId = e.target.value;
+  }));
+
+  // Options
+  document.querySelectorAll('.add-opt-btn').forEach(b => b.addEventListener('click', () => {
+    const idx = parseInt(b.dataset.idx);
+    if (!S.builderState.fields[idx].options) S.builderState.fields[idx].options = [];
+    S.builderState.fields[idx].options.push(''); render();
+  }));
+  document.querySelectorAll('.del-opt-btn').forEach(b => b.addEventListener('click', () => {
+    S.builderState.fields[parseInt(b.dataset.fidx)].options.splice(parseInt(b.dataset.oi), 1); render();
+  }));
+  document.querySelectorAll('.opt-val').forEach(inp => inp.addEventListener('input', e => {
+    S.builderState.fields[parseInt(e.target.dataset.fidx)].options[parseInt(e.target.dataset.oi)] = e.target.value;
+  }));
+
+  // Save
+  document.getElementById('saveFormBtn')?.addEventListener('click', saveForm);
+}
+
+async function saveForm() {
+  const bs = S.builderState;
+  if (!bs.name.trim()) { S.error = 'Formuliernaam is verplicht'; render(); return; }
+  if (!bs.email.trim()) { S.error = 'E-mailadres is verplicht'; render(); return; }
+  S.loading = true; S.error = null; render();
+
+  try {
+    let savedForm;
+    if (S.editingForm === 'new') {
+      savedForm = await api('POST', '/api/admin/forms', { name: bs.name, email: bs.email, fields: bs.fields });
+    } else {
+      savedForm = await api('PUT', `/api/admin/forms/${S.editingForm}`, { name: bs.name, email: bs.email, fields: bs.fields });
+    }
+
+    // Update allowed users
+    const allMonteurs = S.users.filter(u => u.role !== 'admin');
+    await Promise.all(allMonteurs.map(async u => {
+      const shouldHave = bs.allowedUsers.includes(u.id);
+      const hasIt = u.allowedForms?.includes(savedForm.id);
+      if (shouldHave && !hasIt) {
+        const updated = await api('PUT', `/api/admin/users/${u.id}`, { allowedForms: [...(u.allowedForms||[]), savedForm.id] });
+        const idx = S.users.findIndex(x => x.id === u.id); if (idx !== -1) S.users[idx] = updated;
+      } else if (!shouldHave && hasIt) {
+        const updated = await api('PUT', `/api/admin/users/${u.id}`, { allowedForms: (u.allowedForms||[]).filter(id => id !== savedForm.id) });
+        const idx = S.users.findIndex(x => x.id === u.id); if (idx !== -1) S.users[idx] = updated;
+      }
+    }));
+
+    await loadAdminData();
+    S.editingForm = null; S.builderState = null; S.loading = false;
+    S.success = `Formulier "${bs.name}" opgeslagen!`; S.adminTab = 'forms'; render();
+  } catch(e) { S.error = e.message; S.loading = false; render(); }
+}
+
+// --- ADMIN USERS ---
+function renderAdminUsers() {
+  return `
+  <div class="section-header">
+    <h2 class="section-title">Gebruikers</h2>
+    <button class="btn btn-primary" id="newUserBtn">+ Nieuwe monteur</button>
+  </div>
+  ${S.users.filter(u=>u.role!=='admin').length === 0 ? `
+    <div class="empty"><div class="empty-icon">👤</div>
+    <p class="empty-text">Nog geen monteurs</p><p class="empty-sub">Voeg een monteur toe met de knop hierboven.</p></div>` : `
+  <div class="card" style="padding:0;overflow:hidden">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Naam</th><th>Gebruikersnaam</th><th>Formulieren</th><th></th></tr></thead>
+        <tbody>
+        ${S.users.filter(u=>u.role!=='admin').map(u => `<tr>
+          <td><strong>${esc(u.name)}</strong></td>
+          <td class="text-sm text-muted">${esc(u.username)}</td>
+          <td><span class="badge badge-blue">${(u.allowedForms||[]).length} formulier${(u.allowedForms||[]).length!==1?'en':''}</span></td>
+          <td>
+            <div class="flex gap-1">
+              <button class="btn btn-ghost btn-sm edit-user-btn" data-id="${u.id}">✏️ Bewerk</button>
+              <button class="btn btn-danger btn-sm del-user-btn" data-id="${u.id}" data-name="${esc(u.name)}">🗑</button>
+            </div>
+          </td>
+        </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  </div>`}`;
+}
+
+function bindAdminUsers() {
+  document.getElementById('newUserBtn')?.addEventListener('click', () => {
+    S.modal = { type: 'userForm', title: 'Nieuwe monteur', user: null };
+    render();
+  });
+  document.querySelectorAll('.edit-user-btn').forEach(b => b.addEventListener('click', () => {
+    const u = S.users.find(x => x.id === b.dataset.id);
+    S.modal = { type: 'userForm', title: 'Monteur bewerken', user: u };
+    render();
+  }));
+  document.querySelectorAll('.del-user-btn').forEach(b => b.addEventListener('click', () => {
+    S.modal = { type: 'confirm', title: 'Monteur verwijderen', message: `Weet je zeker dat je <strong>${b.dataset.name}</strong> wilt verwijderen?`, action: 'deleteUser', id: b.dataset.id };
+    render();
+  }));
+}
+
+// --- ADMIN LISTS ---
+function renderAdminLists() {
+  return `
+  <div class="section-header">
+    <h2 class="section-title">Lijsten</h2>
+  </div>
+  <div class="card">
+    <p class="card-title" style="margin-bottom:12px">Lijst uploaden</p>
+    <p class="text-sm text-muted" style="margin-bottom:14px">Upload een CSV of Excel-bestand (.xlsx). De eerste kolom wordt gebruikt als keuzelijst.</p>
+    <div class="form-group">
+      <label>Naam van de lijst</label>
+      <input class="form-control" id="listName" type="text" placeholder="bijv. Klantenlijst, Materialen...">
+    </div>
+    <div class="upload-zone" id="uploadZone">
+      <input type="file" id="listFile" accept=".csv,.xlsx,.xls,.txt">
+      <div class="upload-icon">📂</div>
+      <p class="upload-text">Klik om bestand te kiezen</p>
+      <p class="upload-sub">CSV, Excel (.xlsx) of tekst (.txt)</p>
+      <p id="selectedFileName" class="text-sm" style="margin-top:8px;color:var(--blue);font-weight:600"></p>
+    </div>
+    <button class="btn btn-primary" id="uploadListBtn" style="margin-top:12px">⬆ Lijst uploaden</button>
+  </div>
+
+  ${S.lists.length > 0 ? `
+  <div class="card" style="padding:0;overflow:hidden">
+    <div style="padding:16px 20px;border-bottom:1px solid var(--border)">
+      <p class="card-title">Geüploade lijsten</p>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Naam</th><th>Items</th><th>Geüpload op</th><th></th></tr></thead>
+        <tbody>
+          ${S.lists.map(l => `<tr>
+            <td><strong>${esc(l.name)}</strong></td>
+            <td><span class="badge badge-blue">${l.count} items</span></td>
+            <td class="text-sm text-muted">${new Date(l.uploadedAt).toLocaleDateString('nl-NL')}</td>
+            <td>
+              <div class="flex gap-1">
+                <button class="btn btn-ghost btn-sm rename-list-btn" data-id="${l.id}" data-name="${esc(l.name)}">✏️</button>
+                <button class="btn btn-danger btn-sm del-list-btn" data-id="${l.id}" data-name="${esc(l.name)}">🗑</button>
+              </div>
+            </td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  </div>` : ''}`;
+}
+
+function bindAdminLists() {
+  const zone = document.getElementById('uploadZone');
+  const fileInput = document.getElementById('listFile');
+
+  zone?.addEventListener('click', () => fileInput?.click());
+  fileInput?.addEventListener('change', () => {
+    document.getElementById('selectedFileName').textContent = fileInput.files[0]?.name || '';
+  });
+
+  ['dragover','dragleave','drop'].forEach(evt => zone?.addEventListener(evt, e => {
+    e.preventDefault();
+    if (evt === 'dragover') zone.classList.add('dragover');
+    else if (evt === 'dragleave') zone.classList.remove('dragover');
+    else { zone.classList.remove('dragover'); if (e.dataTransfer.files[0]) { fileInput.files = e.dataTransfer.files; document.getElementById('selectedFileName').textContent = e.dataTransfer.files[0].name; } }
+  }));
+
+  document.getElementById('uploadListBtn')?.addEventListener('click', async () => {
+    const name = document.getElementById('listName')?.value?.trim();
+    const file = fileInput?.files[0];
+    if (!file) { S.error = 'Selecteer eerst een bestand'; render(); return; }
+    S.loading = true; S.error = null; render();
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      if (name) fd.append('name', name);
+      const newList = await api('POST', '/api/admin/lists/upload', fd, true);
+      S.lists.push(newList);
+      S.success = `Lijst "${newList.name}" geüpload met ${newList.count} items!`;
+      S.loading = false; render();
+    } catch(e) { S.error = e.message; S.loading = false; render(); }
+  });
+
+  document.querySelectorAll('.rename-list-btn').forEach(b => b.addEventListener('click', () => {
+    S.modal = { type: 'renameList', id: b.dataset.id, currentName: b.dataset.name };
+    render();
+  }));
+
+  document.querySelectorAll('.del-list-btn').forEach(b => b.addEventListener('click', () => {
+    S.modal = { type: 'confirm', title: 'Lijst verwijderen', message: `Weet je zeker dat je <strong>${b.dataset.name}</strong> wilt verwijderen?`, action: 'deleteList', id: b.dataset.id };
+    render();
+  }));
+}
+
+// --- MODAL ---
+function renderModal() {
+  const m = S.modal;
+  let content = '';
+
+  if (m.type === 'confirm') {
+    content = `
+      <div class="modal-header"><h3 class="modal-title">${m.title}</h3><button class="modal-close" id="modalClose">×</button></div>
+      <p style="margin-bottom:20px;font-size:15px">${m.message}</p>
+      <div class="flex gap-1" style="justify-content:flex-end">
+        <button class="btn btn-ghost" id="modalClose2">Annuleren</button>
+        <button class="btn btn-danger" id="modalConfirm">Verwijderen</button>
+      </div>`;
+  } else if (m.type === 'userForm') {
+    const u = m.user;
+    const allForms = S.forms;
+    content = `
+      <div class="modal-header"><h3 class="modal-title">${m.title}</h3><button class="modal-close" id="modalClose">×</button></div>
+      ${S.error ? `<div class="alert alert-error">⚠ ${S.error}</div>` : ''}
+      <div class="form-group"><label>Naam *</label><input class="form-control" id="mu_name" type="text" value="${esc(u?.name||'')}"></div>
+      <div class="form-group"><label>Gebruikersnaam *</label><input class="form-control" id="mu_username" type="text" value="${esc(u?.username||'')}"></div>
+      <div class="form-group"><label>Wachtwoord ${u?'(leeg = niet wijzigen)':'*'}</label><input class="form-control" id="mu_pass" type="password" placeholder="${u?'Nieuw wachtwoord':'Wachtwoord'}"></div>
+      ${allForms.length > 0 ? `
+      <div class="form-group">
+        <label>Toegestane formulieren</label>
+        <div class="user-check-list">
+          ${allForms.map(f => `
+            <div class="user-check-item">
+              <input type="checkbox" id="muf_${f.id}" data-fid="${f.id}" class="mu-form-check" ${(u?.allowedForms||[]).includes(f.id)?'checked':''}>
+              <label for="muf_${f.id}">${esc(f.name)}</label>
+            </div>`).join('')}
+        </div>
+      </div>` : ''}
+      <div class="flex gap-1" style="justify-content:flex-end;margin-top:8px">
+        <button class="btn btn-ghost" id="modalClose2">Annuleren</button>
+        <button class="btn btn-primary" id="modalSaveUser">Opslaan</button>
+      </div>`;
+  } else if (m.type === 'renameList') {
+    content = `
+      <div class="modal-header"><h3 class="modal-title">Lijst hernoemen</h3><button class="modal-close" id="modalClose">×</button></div>
+      <div class="form-group"><label>Nieuwe naam</label><input class="form-control" id="newListName" type="text" value="${esc(m.currentName)}"></div>
+      <div class="flex gap-1" style="justify-content:flex-end">
+        <button class="btn btn-ghost" id="modalClose2">Annuleren</button>
+        <button class="btn btn-primary" id="modalRenameList">Opslaan</button>
+      </div>`;
+  } else if (m.type === 'submissionDetail') {
+    content = `
+      <div class="modal-header">
+        <h3 class="modal-title">${esc(m.title)}</h3>
+        <button class="modal-close" id="modalClose">×</button>
+      </div>
+      <div>${m.content}</div>
+      <div style="margin-top:20px;text-align:right">
+        <button class="btn btn-ghost" id="modalClose2">Sluiten</button>
+      </div>`;
+  }
+
+  return `<div class="modal-overlay" id="modalOverlay"><div class="modal">${content}</div></div>`;
+}
+
+function bindModal() {
+  const m = S.modal;
+  const close = () => { S.modal = null; S.error = null; render(); };
+  document.getElementById('modalClose')?.addEventListener('click', close);
+  document.getElementById('modalClose2')?.addEventListener('click', close);
+  document.getElementById('modalOverlay')?.addEventListener('click', e => { if (e.target.id === 'modalOverlay') close(); });
+
+  if (m.type === 'confirm') {
+    document.getElementById('modalConfirm')?.addEventListener('click', async () => {
+      try {
+        if (m.action === 'deleteForm') {
+          await api('DELETE', `/api/admin/forms/${m.id}`);
+          S.forms = S.forms.filter(f => f.id !== m.id);
+          S.success = 'Formulier verwijderd.';
+        } else if (m.action === 'deleteUser') {
+          await api('DELETE', `/api/admin/users/${m.id}`);
+          S.users = S.users.filter(u => u.id !== m.id);
+          S.success = 'Gebruiker verwijderd.';
+        } else if (m.action === 'deleteList') {
+          await api('DELETE', `/api/admin/lists/${m.id}`);
+          S.lists = S.lists.filter(l => l.id !== m.id);
+          S.success = 'Lijst verwijderd.';
+        }
+        S.modal = null; render();
+      } catch(e) { S.error = e.message; render(); }
+    });
+  }
+
+  if (m.type === 'userForm') {
+    document.getElementById('modalSaveUser')?.addEventListener('click', async () => {
+      const name = document.getElementById('mu_name')?.value?.trim();
+      const username = document.getElementById('mu_username')?.value?.trim();
+      const pass = document.getElementById('mu_pass')?.value;
+      const allowedForms = Array.from(document.querySelectorAll('.mu-form-check:checked')).map(c => c.dataset.fid);
+      if (!name || !username) { S.error = 'Vul naam en gebruikersnaam in'; render(); return; }
+      if (!m.user && !pass) { S.error = 'Wachtwoord is verplicht voor nieuwe gebruikers'; render(); return; }
+      try {
+        const payload = { name, username, role: 'monteur', allowedForms, ...(pass ? { password: pass } : {}) };
+        let saved;
+        if (m.user) { saved = await api('PUT', `/api/admin/users/${m.user.id}`, payload); S.users = S.users.map(u => u.id === saved.id ? saved : u); }
+        else { saved = await api('POST', '/api/admin/users', payload); S.users.push(saved); }
+        S.modal = null; S.success = `Gebruiker "${name}" opgeslagen.`; render();
+      } catch(e) { S.error = e.message; render(); }
+    });
+  }
+
+  if (m.type === 'renameList') {
+    document.getElementById('modalRenameList')?.addEventListener('click', async () => {
+      const newName = document.getElementById('newListName')?.value?.trim();
+      if (!newName) return;
+      try {
+        const updated = await api('PUT', `/api/admin/lists/${m.id}`, { name: newName });
+        S.lists = S.lists.map(l => l.id === m.id ? { ...l, name: newName } : l);
+        S.modal = null; S.success = 'Lijstnaam bijgewerkt.'; render();
+      } catch(e) { S.error = e.message; render(); }
+    });
+  }
+}
+
+// ===================================================
+// MONTEUR
+// ===================================================
+async function loadMonteurData() {
+  const [forms, submissions] = await Promise.all([
+    api('GET', '/api/forms'),
+    api('GET', '/api/submissions')
+  ]);
+  S.myForms = forms;
+  S.mySubmissions = submissions.sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
+}
+
+function renderMonteur() {
+  if (S.fillingForm) return renderFormFill();
+  return `
+  ${renderTopNav()}
+  <div class="tabs">
+    <div class="tab ${S.monteurTab==='forms'?'active':''}" data-mtab="forms">📋 Formulieren</div>
+    <div class="tab ${S.monteurTab==='history'?'active':''}" data-mtab="history">🕓 Mijn inzendingen</div>
+  </div>
+  <div class="page-content">
+    ${S.success ? `<div class="alert alert-success">✓ ${S.success}</div>` : ''}
+    ${S.error ? `<div class="alert alert-error">⚠ ${S.error}</div>` : ''}
+    ${S.monteurTab === 'forms' ? `
+      ${S.myForms.length === 0 ? `
+        <div class="empty" style="margin-top:48px">
+          <div class="empty-icon">📋</div>
+          <p class="empty-text">Geen formulieren beschikbaar</p>
+          <p class="empty-sub">Neem contact op met je beheerder om toegang te krijgen.</p>
+        </div>` : `
+      <div class="section-header"><h2 class="section-title">Mijn formulieren</h2></div>
+      <div class="form-grid">
+        ${S.myForms.map(f => `
+          <div class="form-tile" data-id="${f.id}">
+            <div class="form-tile-icon">📝</div>
+            <div class="form-tile-name">${esc(f.name)}</div>
+            <div class="form-tile-fields">${(f.fields||[]).length} velden</div>
+          </div>`).join('')}
+      </div>`}` : ''}
+    ${S.monteurTab === 'history' ? `
+      <div class="section-header"><h2 class="section-title">Mijn inzendingen</h2></div>
+      ${S.mySubmissions.length === 0 ? `
+        <div class="empty" style="margin-top:48px">
+          <div class="empty-icon">🕓</div>
+          <p class="empty-text">Nog geen inzendingen</p>
+          <p class="empty-sub">Ingevulde formulieren verschijnen hier.</p>
+        </div>` : `
+      <div class="card" style="padding:0;overflow:hidden">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Formulier</th><th>Datum</th><th>Tijd</th><th>Foto's</th><th>Handtekening</th></tr></thead>
+            <tbody>
+              ${S.mySubmissions.map(s => {
+                const d = new Date(s.submittedAt);
+                const datum = d.toLocaleDateString('nl-NL', { day:'2-digit', month:'2-digit', year:'numeric' });
+                const tijd = d.toLocaleTimeString('nl-NL', { hour:'2-digit', minute:'2-digit' });
+                return `<tr class="submission-row" data-sid="${s.id}" style="cursor:pointer">
+                  <td><strong>${esc(s.formName)}</strong></td>
+                  <td class="text-sm">${datum}</td>
+                  <td class="text-sm text-muted">${tijd}</td>
+                  <td>${s.photoCount > 0 ? `<span class="badge badge-blue">📷 ${s.photoCount}</span>` : '<span class="text-muted text-sm">—</span>'}</td>
+                  <td>${s.hasSignature ? '<span class="badge badge-blue">✓</span>' : '<span class="text-muted text-sm">—</span>'}</td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>`}` : ''}
+  </div>
+  ${S.modal ? renderModal() : ''}`;
+}
+
+function bindMonteur() {
+  document.getElementById('logoutBtn')?.addEventListener('click', logout);
+  document.querySelectorAll('.tab[data-mtab]').forEach(t => t.addEventListener('click', () => {
+    S.monteurTab = t.dataset.mtab; S.error = null; S.success = null; render();
+  }));
+  document.querySelectorAll('.submission-row').forEach(row => row.addEventListener('click', () => {
+    const sub = S.mySubmissions.find(s => s.id === row.dataset.sid);
+    if (!sub) return;
+    const form = S.myForms.find(f => f.id === sub.formId);
+    const fields = form?.fields || [];
+    const d = new Date(sub.submittedAt);
+    const datum = d.toLocaleDateString('nl-NL', { day:'2-digit', month:'2-digit', year:'numeric' });
+    const tijd = d.toLocaleTimeString('nl-NL', { hour:'2-digit', minute:'2-digit' });
+    let details = `<p class="text-sm text-muted" style="margin-bottom:16px">${datum} om ${tijd}</p>`;
+    details += fields.filter(f => f.type !== 'photo' && f.type !== 'signature').map(f => {
+      const val = sub.data[f.id];
+      let display = '—';
+      if (f.type === 'checkbox' && Array.isArray(val)) display = val.join(', ') || '—';
+      else if (val !== undefined && val !== null && val !== '') display = String(val);
+      return `<div style="margin-bottom:10px">
+        <div style="font-size:11px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:0.5px">${esc(f.label)}</div>
+        <div style="font-size:14px;padding:6px 0;border-bottom:1px solid var(--border)">${esc(display)}</div>
+      </div>`;
+    }).join('');
+    if (sub.photoCount > 0) details += `<div style="margin-top:8px"><span class="badge badge-blue">📷 ${sub.photoCount} foto('s) verzonden</span></div>`;
+    if (sub.hasSignature) details += `<div style="margin-top:6px"><span class="badge badge-blue">✓ Handtekening meegestuurd</span></div>`;
+    S.modal = { type: 'submissionDetail', title: sub.formName, content: details };
+    render();
+  }));
+  document.querySelectorAll('.form-tile').forEach(t => t.addEventListener('click', async () => {
+    const form = S.myForms.find(f => f.id === t.dataset.id);
+    if (!form) return;
+    S.fillingForm = form;
+    S.formValues = {};
+    S.signatureData = null;
+    S.photoFiles = [];
+    S.error = null; S.success = null;
+    // Preload list data
+    const listFields = (form.fields||[]).filter(f => f.type === 'list' && f.listId);
+    await Promise.all(listFields.map(async f => {
+      if (!S.listItems[f.listId]) {
+        try { const data = await api('GET', `/api/lists/${f.listId}/items`); S.listItems[f.listId] = data.items || []; }
+        catch { S.listItems[f.listId] = []; }
+      }
+    }));
+    render();
+  }));
+}
+
+// --- FORM FILL ---
+function renderFormFill() {
+  const form = S.fillingForm;
+  return `
+  <div class="form-fill-header">
+    <button class="back-btn" id="backFromFill">←</button>
+    <div><div class="form-fill-title">${esc(form.name)}</div></div>
+  </div>
+  <div class="form-fill-body">
+    ${S.error ? `<div class="alert alert-error">⚠ ${S.error}</div>` : ''}
+    ${(form.fields||[]).map(f => renderFormField(f)).join('')}
+    <div style="height:80px"></div>
+  </div>
+  <div class="submit-wrap">
+    <button class="btn btn-primary btn-lg" id="submitFormBtn" ${S.loading?'disabled':''}>
+      ${S.loading ? '<span class="spinner" style="width:18px;height:18px;border-width:2px;border-color:rgba(255,255,255,0.3);border-top-color:white"></span> Verzenden...' : '✉ Formulier verzenden'}
+    </button>
+  </div>`;
+}
+
+function renderFormField(f) {
+  const val = S.formValues[f.id];
+  const reqMark = f.required ? ' <span style="color:var(--danger)">*</span>' : '';
+
+  if (f.type === 'text' || f.type === 'email' || f.type === 'phone' || f.type === 'number') {
+    const inputType = f.type === 'phone' ? 'tel' : f.type;
+    return `<div class="form-group"><label>${esc(f.label)}${reqMark}</label>
+      <input class="form-control fill-input" data-id="${f.id}" type="${inputType}" value="${esc(val||'')}" placeholder="${esc(f.label)}"></div>`;
+  }
+  if (f.type === 'textarea') {
+    return `<div class="form-group"><label>${esc(f.label)}${reqMark}</label>
+      <textarea class="form-control fill-input" data-id="${f.id}" placeholder="${esc(f.label)}">${esc(val||'')}</textarea></div>`;
+  }
+  if (f.type === 'date') {
+    return `<div class="form-group"><label>${esc(f.label)}${reqMark}</label>
+      <input class="form-control fill-input" data-id="${f.id}" type="date" value="${esc(val||'')}"></div>`;
+  }
+  if (f.type === 'multiselect') {
+    const opts = f.options || [];
+    return `<div class="form-group"><label>${esc(f.label)}${reqMark}</label>
+      <div class="check-group">
+        ${opts.map(o => `<div class="check-item"><input type="radio" id="r_${f.id}_${esc(o)}" name="r_${f.id}" class="fill-radio" data-id="${f.id}" value="${esc(o)}" ${val===o?'checked':''}><label for="r_${f.id}_${esc(o)}">${esc(o)}</label></div>`).join('')}
+      </div></div>`;
+  }
+  if (f.type === 'checkbox') {
+    const opts = f.options || [];
+    const checked = Array.isArray(val) ? val : [];
+    return `<div class="form-group"><label>${esc(f.label)}${reqMark}</label>
+      <div class="check-group">
+        ${opts.map(o => `<div class="check-item"><input type="checkbox" id="c_${f.id}_${esc(o)}" class="fill-checkbox" data-id="${f.id}" value="${esc(o)}" ${checked.includes(o)?'checked':''}><label for="c_${f.id}_${esc(o)}">${esc(o)}</label></div>`).join('')}
+      </div></div>`;
+  }
+  if (f.type === 'list') {
+    const items = S.listItems[f.listId] || [];
+    return `<div class="form-group">
+      <label>${esc(f.label)}${reqMark}</label>
+      <div class="dropdown-wrap" id="ddwrap_${f.id}">
+        <input class="form-control dd-search" data-id="${f.id}" type="text" placeholder="Zoeken of selecteren..." value="${esc(val||'')}" autocomplete="off" readonly>
+        <div class="dropdown-list hidden" id="ddlist_${f.id}">
+          ${items.map(item => `<div class="dropdown-item ${val===item?'selected':''}" data-id="${f.id}" data-val="${esc(item)}">${esc(item)}</div>`).join('')}
+        </div>
+      </div></div>`;
+  }
+  if (f.type === 'signature') {
+    const hasSig = !!S.signatureData;
+    return `<div class="form-group">
+      <label>${esc(f.label)}${reqMark}</label>
+      <div class="sig-wrap">
+        <canvas class="sig-canvas" id="sig_${f.id}" data-id="${f.id}" width="600" height="160"></canvas>
+        <div class="sig-actions">
+          <button class="btn btn-ghost btn-sm sig-clear-btn" data-id="${f.id}">✕ Wissen</button>
+          ${hasSig ? '<span class="text-sm" style="color:var(--success)">✓ Handtekening gezet</span>' : '<span class="text-sm text-muted">Teken hier je handtekening</span>'}
+        </div>
+      </div></div>`;
+  }
+  if (f.type === 'photo') {
+    return `<div class="form-group">
+      <label>${esc(f.label)}${reqMark}</label>
+      <input type="file" accept="image/*" capture="environment" multiple id="photo_${f.id}" data-id="${f.id}" class="fill-photo hidden">
+      <button class="btn btn-outline" onclick="document.getElementById('photo_${f.id}').click()">📷 Foto('s) toevoegen</button>
+      <div class="photo-grid" id="photoGrid_${f.id}">
+        ${S.photoFiles.map((pf,i) => `
+          <div class="photo-thumb">
+            <img src="${URL.createObjectURL(pf)}" alt="foto">
+            <button class="photo-remove" data-pi="${i}">×</button>
+          </div>`).join('')}
+      </div>
+    </div>`;
+  }
+  return '';
+}
+
+function bindMonteur2() {
+  document.getElementById('backFromFill')?.addEventListener('click', () => {
+    S.fillingForm = null; S.error = null; S.success = null; render();
+  });
+
+  // Text/date/email/etc
+  document.querySelectorAll('.fill-input').forEach(el => el.addEventListener('input', e => {
+    S.formValues[e.target.dataset.id] = e.target.value;
+  }));
+  // Radio
+  document.querySelectorAll('.fill-radio').forEach(el => el.addEventListener('change', e => {
+    if (e.target.checked) S.formValues[e.target.dataset.id] = e.target.value;
+  }));
+  // Checkbox
+  document.querySelectorAll('.fill-checkbox').forEach(el => el.addEventListener('change', () => {
+    const id = el.dataset.id;
+    const checked = Array.from(document.querySelectorAll(`.fill-checkbox[data-id="${id}"]:checked`)).map(c => c.value);
+    S.formValues[id] = checked;
+  }));
+
+  // Dropdown lists
+  document.querySelectorAll('.dd-search').forEach(inp => {
+    const id = inp.dataset.id;
+    const list = document.getElementById(`ddlist_${id}`);
+
+    inp.addEventListener('click', () => {
+      inp.readOnly = false;
+      list?.classList.remove('hidden');
+    });
+    inp.addEventListener('input', () => {
+      const q = inp.value.toLowerCase();
+      list?.querySelectorAll('.dropdown-item').forEach(item => {
+        item.style.display = item.dataset.val.toLowerCase().includes(q) ? '' : 'none';
+      });
+    });
+  });
+  document.querySelectorAll('.dropdown-item').forEach(item => item.addEventListener('click', e => {
+    const id = item.dataset.id;
+    const val = item.dataset.val;
+    S.formValues[id] = val;
+    const inp = document.querySelector(`.dd-search[data-id="${id}"]`);
+    if (inp) { inp.value = val; inp.readOnly = true; }
+    document.getElementById(`ddlist_${id}`)?.classList.add('hidden');
+    document.querySelectorAll(`#ddlist_${id} .dropdown-item`).forEach(i => i.classList.toggle('selected', i.dataset.val === val));
+  }));
+  document.addEventListener('click', e => {
+    if (!e.target.classList.contains('dd-search') && !e.target.classList.contains('dropdown-item')) {
+      document.querySelectorAll('.dropdown-list').forEach(l => l.classList.add('hidden'));
+    }
+  });
+
+  // Signature pads
+  document.querySelectorAll('.sig-canvas').forEach(canvas => {
+    setupSignaturePad(canvas);
+  });
+  document.querySelectorAll('.sig-clear-btn').forEach(btn => btn.addEventListener('click', () => {
+    S.signatureData = null;
+    const canvas = document.getElementById(`sig_${btn.dataset.id}`);
+    if (canvas) { const ctx = canvas.getContext('2d'); ctx.clearRect(0,0,canvas.width,canvas.height); }
+    render();
+  }));
+
+  // Photo upload
+  document.querySelectorAll('.fill-photo').forEach(inp => inp.addEventListener('change', () => {
+    for (const file of inp.files) S.photoFiles.push(file);
+    render();
+  }));
+  document.querySelectorAll('.photo-remove').forEach(btn => btn.addEventListener('click', () => {
+    S.photoFiles.splice(parseInt(btn.dataset.pi), 1); render();
+  }));
+
+  // Submit
+  document.getElementById('submitFormBtn')?.addEventListener('click', submitForm);
+}
+
+function setupSignaturePad(canvas) {
+  const ctx = canvas.getContext('2d');
+  // Resize canvas to actual display size
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width || 600;
+  canvas.height = 160;
+
+  ctx.strokeStyle = '#1C2833';
+  ctx.lineWidth = 2.5;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  let drawing = false, lastX = 0, lastY = 0;
+
+  const getPos = (e, canvas) => {
+    const r = canvas.getBoundingClientRect();
+    const src = e.touches ? e.touches[0] : e;
+    return { x: src.clientX - r.left, y: src.clientY - r.top };
+  };
+
+  const start = e => { e.preventDefault(); drawing = true; const p = getPos(e, canvas); lastX = p.x; lastY = p.y; ctx.beginPath(); ctx.moveTo(p.x, p.y); };
+  const move = e => {
+    if (!drawing) return; e.preventDefault();
+    const p = getPos(e, canvas);
+    ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(p.x, p.y); ctx.stroke();
+    lastX = p.x; lastY = p.y;
+  };
+  const stop = e => {
+    if (!drawing) return; e.preventDefault(); drawing = false;
+    S.signatureData = canvas.toDataURL('image/png');
+  };
+
+  canvas.addEventListener('mousedown', start);
+  canvas.addEventListener('mousemove', move);
+  canvas.addEventListener('mouseup', stop);
+  canvas.addEventListener('touchstart', start, { passive: false });
+  canvas.addEventListener('touchmove', move, { passive: false });
+  canvas.addEventListener('touchend', stop, { passive: false });
+}
+
+async function submitForm() {
+  const form = S.fillingForm;
+  S.error = null;
+
+  // Validate required fields
+  for (const field of (form.fields||[])) {
+    if (!field.required) continue;
+    const val = field.type === 'signature' ? S.signatureData : S.formValues[field.id];
+    const empty = val === undefined || val === null || val === '' || (Array.isArray(val) && val.length === 0);
+    if (empty) { S.error = `Veld "${field.label}" is verplicht.`; render(); return; }
+  }
+
+  S.loading = true; render();
+
+  try {
+    const fd = new FormData();
+    fd.append('data', JSON.stringify(S.formValues));
+    if (S.signatureData) fd.append('signature', S.signatureData);
+    S.photoFiles.forEach((f, i) => fd.append('photos', f, f.name || `foto_${i}.jpg`));
+
+    const result = await api('POST', `/api/submit/${form.id}`, fd, true);
+    S.loading = false; S.fillingForm = null;
+    S.formValues = {}; S.signatureData = null; S.photoFiles = [];
+    S.success = result.message || 'Formulier succesvol verzonden!';
+    render();
+  } catch(e) { S.error = e.message; S.loading = false; render(); }
+}
+
+// ===================================================
+// SHARED COMPONENTS
+// ===================================================
+function renderTopNav() {
+  return `
+  <nav class="topnav">
+    <div class="logo logo-white"><span class="crown">♛</span>aqua+</div>
+    <div class="flex items-center gap-2">
+      <span class="nav-user">${esc(S.user?.name || '')}</span>
+      <button class="nav-logout" id="logoutBtn">Uitloggen</button>
+    </div>
+  </nav>`;
+}
+
+// ===================================================
+// BIND ROUTING
+// ===================================================
+function bindAfterRender() {
+  if (S.view === 'admin') {
+    if (S.editingForm !== null) bindFormBuilder();
+    else bindAdmin();
+  }
+  if (S.view === 'monteur') {
+    if (S.fillingForm) bindMonteur2();
+    else bindMonteur();
+  }
+}
+
+// ===================================================
+// LOGOUT
+// ===================================================
+function logout() {
+  localStorage.removeItem('aq_token'); localStorage.removeItem('aq_user');
+  S = { ...S, token: null, user: null, view: 'login', error: null, success: null, fillingForm: null, editingForm: null, modal: null };
+  render();
+}
+
+// ===================================================
+// UTILS
+// ===================================================
+function esc(str) {
+  if (str === undefined || str === null) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+}
+
+// Override render to auto-bind
+const _render = render;
+window.render = function() {
+  _render();
+  bindAfterRender();
+};
+
+// ===================================================
+// INIT
+// ===================================================
+async function init() {
+  S.view = 'loading'; render();
+
+  // Register service worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').catch(e => console.warn('SW fout:', e));
+  }
+
+  if (S.token && S.user) {
+    try {
+      await api('GET', '/api/me');
+      await initAfterLogin();
+    } catch {
+      logout();
+    }
+  } else {
+    S.view = 'login'; render();
+  }
+}
+
+init();
+</script>
+</body>
+</html>

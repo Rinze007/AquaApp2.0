@@ -271,6 +271,15 @@ app.get('/api/lists/:id/items', authMiddleware, (req, res) => {
   }
 });
 
+// ===== INZENDINGEN =====
+app.get('/api/submissions', authMiddleware, (req, res) => {
+  const submissions = readJSON('submissions.json');
+  if (req.user.role === 'admin') return res.json(submissions);
+  res.json(submissions.filter(s => s.userId === req.user.id));
+});
+
+if (!fs.existsSync(path.join(dataDir, 'submissions.json'))) writeJSON('submissions.json', []);
+
 // ===== FORM SUBMISSION =====
 app.post('/api/submit/:formId', authMiddleware, upload.fields([{ name: 'photos', maxCount: 20 }]), async (req, res) => {
   const photoPaths = [];
@@ -284,6 +293,21 @@ app.post('/api/submit/:formId', authMiddleware, upload.fields([{ name: 'photos',
     photos.forEach(p => photoPaths.push(p.path));
 
     await sendEmail(form, formData, photos, signature, req.user);
+
+    // Inzending opslaan
+    const submissions = readJSON('submissions.json');
+    submissions.push({
+      id: uuidv4(),
+      formId: form.id,
+      formName: form.name,
+      userId: req.user.id,
+      userName: req.user.name,
+      data: formData,
+      photoCount: photos.length,
+      hasSignature: !!signature,
+      submittedAt: new Date().toISOString()
+    });
+    writeJSON('submissions.json', submissions);
 
     photos.forEach(p => { if (fs.existsSync(p.path)) fs.unlinkSync(p.path); });
     res.json({ success: true, message: 'Formulier succesvol verzonden!' });
