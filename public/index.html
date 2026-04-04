@@ -1584,7 +1584,7 @@ function renderConditionSection(f, i) {
   const allFields = S.builderState.fields;
   const otherFields = allFields.filter((x, xi) => xi !== i && x.id && x.label);
   const cond = f.condition || {};
-  const hasCondition = !!cond.fieldId;
+  const hasCondition = f.condition !== undefined && f.condition !== null;
 
   return `<div style="margin-top:14px;padding-top:14px;border-top:1px dashed var(--border)">
     <div class="toggle-row" style="margin-bottom:${hasCondition?'12px':'0'}">
