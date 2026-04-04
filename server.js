@@ -3,7 +3,7 @@ const express = require('express');
 const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const csv = require('csv-parser');
@@ -334,16 +334,11 @@ app.post('/api/submit/:formId', authMiddleware, upload.fields([{ name: 'photos',
 
 // ===== EMAIL VERZENDING =====
 async function sendEmail(form, formData, photos, signature, user) {
-  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-    throw new Error('SMTP niet geconfigureerd. Stel SMTP_USER en SMTP_PASS in als omgevingsvariabelen.');
+  if (!process.env.RESEND_API_KEY) {
+    throw new Error('RESEND_API_KEY niet geconfigureerd.');
   }
 
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'smtp.gmail.com',
-    port: parseInt(process.env.SMTP_PORT || '587'),
-    secure: process.env.SMTP_SECURE === 'true',
-    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
-  });
+  const resend = new Resend(process.env.RESEND_API_KEY);
 
   const now = new Date();
   const datumStr = now.toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit', year: 'numeric' });
@@ -365,30 +360,30 @@ async function sendEmail(form, formData, photos, signature, user) {
   }
   text += `\n— Verzonden via AquaApp\n`;
 
-  // Foto's als bijlage
-  const attachments = photos.map((p, i) => ({
-    filename: `foto_${i + 1}${path.extname(p.originalname || p.path) || '.jpg'}`,
-    path: p.path,
-    contentType: p.mimetype || 'image/jpeg'
-  }));
+  // Foto's als bijlage (base64)
+  const attachments = [];
+  for (let i = 0; i < photos.length; i++) {
+    const p = photos[i];
+    const content = fs.readFileSync(p.path).toString('base64');
+    const ext = path.extname(p.originalname || p.path) || '.jpg';
+    attachments.push({ filename: `foto_${i + 1}${ext}`, content });
+  }
 
   // Handtekening als bijlage
   if (signature && signature.startsWith('data:image')) {
     const base64Data = signature.replace(/^data:image\/\w+;base64,/, '');
-    attachments.push({
-      filename: 'handtekening.png',
-      content: Buffer.from(base64Data, 'base64'),
-      contentType: 'image/png'
-    });
+    attachments.push({ filename: 'handtekening.png', content: base64Data });
   }
 
-  await transporter.sendMail({
-    from: `"AquaApp" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+  const { error } = await resend.emails.send({
+    from: 'AquaApp <onboarding@resend.dev>',
     to: form.email,
     subject: `[AquaApp] ${form.name} — ${user.name} — ${datumStr}`,
     text,
     attachments
   });
+
+  if (error) throw new Error(error.message);
 }
 
 // ===== SPA FALLBACK =====
