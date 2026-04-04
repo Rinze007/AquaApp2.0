@@ -1268,7 +1268,7 @@ function bindAdminForms() {
 // --- FORM BUILDER ---
 function renderFormBuilder() {
   const bs = S.builderState;
-  const fieldTypeLabels = { text:'Tekst', textarea:'Tekstvak (groot)', number:'Nummer', email:'E-mail', phone:'Telefoon', date:'Datum', multiselect:'Meerkeuze (één antwoord)', checkbox:'Checkboxes (meerdere)', signature:'Handtekening', photo:'Foto upload', list:"Keuze uit lijst" };
+  const fieldTypeLabels = { heading:'📌 Koptekst / instructie', text:'Tekst', textarea:'Tekstvak (groot)', number:'Nummer', email:'E-mail', phone:'Telefoon', date:'Datum', multiselect:'Meerkeuze (één antwoord)', checkbox:'Checkboxes (meerdere)', signature:'Handtekening', photo:'Foto upload', list:"Keuze uit lijst" };
   const monteurs = S.users.filter(u => u.role !== 'admin');
 
   return `
@@ -1329,13 +1329,14 @@ function renderFormBuilder() {
 function renderFieldCard(f, i, labels) {
   const needsOptions = ['multiselect', 'checkbox'].includes(f.type);
   const needsList = f.type === 'list';
+  const isHeading = f.type === 'heading';
   const options = f.options || [];
   return `
-  <div class="field-card" data-idx="${i}">
+  <div class="field-card" data-idx="${i}" style="${isHeading ? 'background:linear-gradient(135deg,#EAF3FF,#F0F6FF);border-color:rgba(0,87,184,0.2)' : ''}">
     <div class="field-header">
       <div class="flex items-center gap-1">
-        <span class="field-number">${i+1}</span>
-        <strong style="font-size:14px">${esc(f.label || 'Naamloos veld')}</strong>
+        <span class="field-number" style="${isHeading ? 'background:linear-gradient(135deg,#0057B8,#0A79E8)' : ''}">${isHeading ? '📌' : i+1}</span>
+        <strong style="font-size:14px">${esc(f.label || (isHeading ? 'Koptekst' : 'Naamloos veld'))}</strong>
       </div>
       <div class="flex gap-1">
         ${i > 0 ? `<button class="btn btn-ghost btn-sm move-up-btn" data-idx="${i}">↑</button>` : ''}
@@ -1345,8 +1346,8 @@ function renderFieldCard(f, i, labels) {
     </div>
     <div class="field-row">
       <div class="form-group">
-        <label>Label</label>
-        <input class="form-control field-label" data-idx="${i}" type="text" placeholder="Veldnaam" value="${esc(f.label||'')}">
+        <label>${isHeading ? 'Koptekst / instructietekst' : 'Label'}</label>
+        <input class="form-control field-label" data-idx="${i}" type="text" placeholder="${isHeading ? 'bv. Stap 1 – Locatie en regio' : 'Veldnaam'}" value="${esc(f.label||'')}">
       </div>
       <div class="form-group">
         <label>Type</label>
@@ -1355,10 +1356,12 @@ function renderFieldCard(f, i, labels) {
         </select>
       </div>
     </div>
+    ${!isHeading ? `
     <div class="toggle-row">
       <label class="toggle"><input type="checkbox" class="field-required" data-idx="${i}" ${f.required?'checked':''}><span class="toggle-slider"></span></label>
       <span class="text-sm">Verplicht veld</span>
-    </div>
+    </div>` : `
+    <div style="font-size:12px;color:var(--blue);opacity:0.7;margin-top:4px">📌 Dit veld toont alleen tekst — de monteur hoeft hier niets in te vullen.</div>`}
     ${needsOptions ? `
     <div class="options-list" style="margin-top:12px">
       <label style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Keuze-opties</label>
@@ -1870,6 +1873,7 @@ function bindMonteur() {
 
 // --- FORM FILL ---
 function fieldHasValue(f) {
+  if (f.type === 'heading') return true; // heading has no value to fill in
   const val = S.formValues[f.id];
   if (f.type === 'photo') return S.photoFiles.length > 0;
   if (f.type === 'signature') return !!S.signatureData;
@@ -1882,7 +1886,10 @@ function renderFormFill() {
   const fields = form.fields || [];
   const total = fields.length;
   const idx = S.currentFieldIdx;
-  const pct = total === 0 ? 100 : Math.round((idx / total) * 100);
+  // Progress only counts non-heading fields
+  const inputFields = fields.filter(f => f.type !== 'heading');
+  const inputIdx = fields.slice(0, idx).filter(f => f.type !== 'heading').length;
+  const pct = inputFields.length === 0 ? 100 : Math.round((inputIdx / inputFields.length) * 100);
   const isLast = idx >= total - 1;
   const currentField = fields[idx];
   const currentHasValue = currentField ? fieldHasValue(currentField) : true;
@@ -1892,7 +1899,7 @@ function renderFormFill() {
     <button class="back-btn" id="backFromFill">←</button>
     <div style="flex:1">
       <div class="form-fill-title">${esc(form.name)}</div>
-      <div style="font-size:12px;opacity:0.8">Stap ${Math.min(idx+1, total)} van ${total}</div>
+      <div style="font-size:12px;opacity:0.8">Vraag ${inputIdx + (currentField?.type !== 'heading' ? 1 : 0)} van ${inputFields.length}</div>
     </div>
     <div style="font-size:13px;font-weight:700;opacity:0.9">${pct}%</div>
   </div>
@@ -1906,7 +1913,7 @@ function renderFormFill() {
 
     ${idx > 0 ? `
     <div style="margin-bottom:20px;animation:fadeIn 0.4s ease">
-      ${fields.slice(0, idx).map((f, fi) => {
+      ${fields.slice(0, idx).filter(f => f.type !== 'heading').map((f, fi) => {
         const val = S.formValues[f.id];
         let display = '—';
         if (f.type === 'photo') display = S.photoFiles.length > 0 ? `📷 ${S.photoFiles.length} foto('s)` : '—';
@@ -1914,7 +1921,7 @@ function renderFormFill() {
         else if (f.type === 'checkbox' && Array.isArray(val)) display = val.join(', ') || '—';
         else if (val) display = String(val);
         return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-radius:12px;background:rgba(31,157,97,0.06);border:1px solid rgba(31,157,97,0.12);margin-bottom:6px;font-size:13px;animation:slideInUp ${0.2 + fi*0.05}s ease">
-          <span style="color:var(--text-muted)">${esc(f.label)}</span>
+          <span style="color:var(--text-muted)">${esc(f.label.split('\n')[0])}</span>
           <span style="font-weight:700;color:var(--success);display:flex;align-items:center;gap:5px"><span style="animation:checkBounce 0.4s ease">✓</span> ${esc(display)}</span>
         </div>`;
       }).join('')}
@@ -1945,6 +1952,17 @@ function renderFormFill() {
 function renderFormField(f) {
   const val = S.formValues[f.id];
   const reqMark = f.required ? ' <span style="color:var(--danger)">*</span>' : '';
+
+  if (f.type === 'heading') {
+    // Parse label: first line = title, remaining lines = body text
+    const lines = (f.label || '').split('\n');
+    const title = lines[0];
+    const body = lines.slice(1).join('\n').trim();
+    return `<div style="text-align:left">
+      <div style="font-size:18px;font-weight:900;color:var(--blue);margin-bottom:${body?'10px':'0'};letter-spacing:-0.3px">${esc(title)}</div>
+      ${body ? `<div style="font-size:14px;color:var(--text-muted);line-height:1.7;white-space:pre-line">${esc(body)}</div>` : ''}
+    </div>`;
+  }
 
   if (f.type === 'text' || f.type === 'email' || f.type === 'phone' || f.type === 'number') {
     const inputType = f.type === 'phone' ? 'tel' : f.type;
