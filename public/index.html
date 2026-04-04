@@ -932,6 +932,112 @@ tr:hover td { background: rgba(248,251,254,0.95); }
 .user-check-item input { width: 16px; height: 16px; accent-color: var(--blue); }
 .user-check-item label { font-size: 13px; cursor: pointer; }
 
+/* ===== FORM BUILDER DRAG & DROP ===== */
+.builder-layout {
+  display: flex;
+  min-height: calc(100vh - 126px);
+  background: #F2F6FA;
+}
+.builder-sidebar {
+  width: 220px;
+  min-width: 220px;
+  background: #1B2840;
+  color: #C8D6E8;
+  padding: 16px 0 40px;
+  overflow-y: auto;
+  position: sticky;
+  top: 126px;
+  max-height: calc(100vh - 126px);
+  flex-shrink: 0;
+}
+.sidebar-section-title {
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #5A7090;
+  padding: 16px 16px 6px;
+}
+.field-type-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  cursor: grab;
+  font-size: 13px;
+  font-weight: 600;
+  color: #BDD0E8;
+  border-radius: 0;
+  transition: background 0.15s, color 0.15s;
+  user-select: none;
+}
+.field-type-item:hover {
+  background: rgba(255,255,255,0.08);
+  color: #FFFFFF;
+}
+.field-type-item:active { cursor: grabbing; }
+.field-type-item.dragging { opacity: 0.4; }
+.field-type-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.builder-canvas {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+  min-width: 0;
+}
+.drop-zone {
+  height: 8px;
+  border-radius: 4px;
+  margin: 4px 0;
+  transition: all 0.2s;
+  position: relative;
+}
+.drop-zone.drag-active {
+  height: 40px;
+  background: rgba(0,87,184,0.08);
+  border: 2px dashed rgba(0,87,184,0.4);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.drop-zone.drag-active::after {
+  content: '+ Hier neerzetten';
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--blue);
+  opacity: 0.7;
+}
+.field-card {
+  cursor: default;
+}
+.field-card[draggable="true"] {
+  cursor: grab;
+}
+.field-card[draggable="true"]:active {
+  cursor: grabbing;
+}
+.field-card.dragging-card {
+  opacity: 0.35;
+  transform: scale(0.98);
+}
+
+/* Divider field */
+.field-divider-preview {
+  border: none;
+  border-top: 2px solid var(--border);
+  margin: 8px 0;
+}
+
 /* ===== MOBILE ===== */
 @media (max-width: 760px) {
   .topnav {
@@ -1266,10 +1372,52 @@ function bindAdminForms() {
 }
 
 // --- FORM BUILDER ---
+const FIELD_TYPES_SIDEBAR = [
+  { section: 'Inhoud' },
+  { type: 'heading',     icon: '📌', label: 'Koptekst' },
+  { type: 'divider',     icon: '—',  label: 'Scheidingslijn' },
+  { section: 'Invoervelden' },
+  { type: 'text',        icon: 'Aa', label: 'Tekst' },
+  { type: 'textarea',    icon: '📝', label: 'Tekstvak' },
+  { type: 'number',      icon: '#',  label: 'Nummer' },
+  { type: 'email',       icon: '✉',  label: 'E-mail' },
+  { type: 'phone',       icon: '📞', label: 'Telefoon' },
+  { type: 'date',        icon: '📅', label: 'Datum' },
+  { section: 'Keuze' },
+  { type: 'multiselect', icon: '⊙',  label: 'Meerkeuze' },
+  { type: 'checkbox',    icon: '☑',  label: 'Checkboxes' },
+  { type: 'list',        icon: '≡',  label: 'Keuze uit lijst' },
+  { section: 'Media & Overig' },
+  { type: 'photo',       icon: '📷', label: "Foto's" },
+  { type: 'signature',   icon: '✍',  label: 'Handtekening' },
+];
+
 function renderFormBuilder() {
   const bs = S.builderState;
-  const fieldTypeLabels = { heading:'📌 Koptekst / instructie', text:'Tekst', textarea:'Tekstvak (groot)', number:'Nummer', email:'E-mail', phone:'Telefoon', date:'Datum', multiselect:'Meerkeuze (één antwoord)', checkbox:'Checkboxes (meerdere)', signature:'Handtekening', photo:'Foto upload', list:"Keuze uit lijst" };
+  const fieldTypeLabels = { heading:'📌 Koptekst / instructie', divider:'— Scheidingslijn', text:'Tekst', textarea:'Tekstvak (groot)', number:'Nummer', email:'E-mail', phone:'Telefoon', date:'Datum', multiselect:'Meerkeuze (één antwoord)', checkbox:'Checkboxes (meerdere)', signature:'Handtekening', photo:'Foto upload', list:'Keuze uit lijst' };
   const monteurs = S.users.filter(u => u.role !== 'admin');
+
+  const sidebarHtml = FIELD_TYPES_SIDEBAR.map(item => {
+    if (item.section) return `<div class="sidebar-section-title">${item.section}</div>`;
+    return `<div class="field-type-item" draggable="true" data-fieldtype="${item.type}">
+      <div class="field-type-icon">${item.icon}</div>
+      <span>${item.label}</span>
+    </div>`;
+  }).join('');
+
+  const fieldsWithDropzones = () => {
+    if (bs.fields.length === 0) {
+      return `<div class="drop-zone" data-pos="0" style="height:80px;background:rgba(0,87,184,0.04);border:2px dashed rgba(0,87,184,0.2);border-radius:16px;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:13px;font-weight:600">
+        ← Sleep een veldtype hierheen om te beginnen
+      </div>`;
+    }
+    let html = `<div class="drop-zone" data-pos="0"></div>`;
+    bs.fields.forEach((f, i) => {
+      html += renderFieldCard(f, i, fieldTypeLabels);
+      html += `<div class="drop-zone" data-pos="${i+1}"></div>`;
+    });
+    return html;
+  };
 
   return `
   ${renderTopNav()}
@@ -1277,69 +1425,71 @@ function renderFormBuilder() {
     <button class="back-btn" id="backFromBuilder">←</button>
     <div>
       <div class="form-fill-title">${S.editingForm === 'new' ? 'Nieuw formulier' : 'Formulier bewerken'}</div>
-      <div style="font-size:12px;opacity:0.8">${bs.name || 'Naamloos'}</div>
+      <div style="font-size:12px;opacity:0.8">${bs.name || 'Naamloos'} · ${bs.fields.length} veld${bs.fields.length!==1?'en':''}</div>
     </div>
     <button class="btn btn-success btn-sm" id="saveFormBtn">💾 Opslaan</button>
   </div>
 
-  <div class="page-content">
-    ${S.error ? `<div class="alert alert-error">⚠ ${S.error}</div>` : ''}
-
-    <div class="card">
-      <p class="card-title" style="margin-bottom:14px">Basisinformatie</p>
-      <div class="form-group">
-        <label>Naam formulier *</label>
-        <input class="form-control" id="bs_name" type="text" placeholder="bijv. Onderhoudsrapport" value="${esc(bs.name)}">
-      </div>
-      <div class="form-group">
-        <label>Bestemming e-mailadres *</label>
-        <input class="form-control" id="bs_email" type="email" placeholder="ontvanger@bedrijf.nl" value="${esc(bs.email)}">
-      </div>
-      <div class="form-group" style="margin-bottom:0">
-        <label>Weergavemodus</label>
-        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:4px">
-          <label style="display:flex;align-items:center;gap:8px;padding:10px 16px;border-radius:12px;border:2px solid ${(!bs.mode||bs.mode==='step')?'var(--blue)':'var(--border)'};background:${(!bs.mode||bs.mode==='step')?'var(--blue-light)':'var(--white)'};cursor:pointer;flex:1;min-width:160px">
-            <input type="radio" name="bs_mode" value="step" ${(!bs.mode||bs.mode==='step')?'checked':''} style="accent-color:var(--blue)">
-            <div>
-              <div style="font-weight:800;font-size:13px">Stap voor stap</div>
-              <div style="font-size:11px;color:var(--text-muted)">Één veld tegelijk, voortgangsbalk</div>
-            </div>
-          </label>
-          <label style="display:flex;align-items:center;gap:8px;padding:10px 16px;border-radius:12px;border:2px solid ${bs.mode==='classic'?'var(--blue)':'var(--border)'};background:${bs.mode==='classic'?'var(--blue-light)':'var(--white)'};cursor:pointer;flex:1;min-width:160px">
-            <input type="radio" name="bs_mode" value="classic" ${bs.mode==='classic'?'checked':''} style="accent-color:var(--blue)">
-            <div>
-              <div style="font-weight:800;font-size:13px">Alles op één pagina</div>
-              <div style="font-size:11px;color:var(--text-muted)">Scroll door alle velden, zoals JotForm</div>
-            </div>
-          </label>
-        </div>
-      </div>
+  <div class="builder-layout">
+    <!-- LEFT SIDEBAR -->
+    <div class="builder-sidebar">
+      <div style="padding:14px 16px 10px;font-size:11px;font-weight:900;color:#4A6080;text-transform:uppercase;letter-spacing:0.1em">Veldtypen</div>
+      ${sidebarHtml}
     </div>
 
-    ${monteurs.length > 0 ? `
-    <div class="card">
-      <p class="card-title" style="margin-bottom:10px">Toegang monteurs</p>
-      <p class="text-sm text-muted" style="margin-bottom:10px">Selecteer welke monteurs dit formulier mogen gebruiken.</p>
-      <div class="user-check-list">
-        ${monteurs.map(u => `
-          <div class="user-check-item">
-            <input type="checkbox" id="au_${u.id}" data-uid="${u.id}" class="au-check" ${bs.allowedUsers.includes(u.id)?'checked':''}>
-            <label for="au_${u.id}">${esc(u.name)} <span class="text-muted text-sm">(${esc(u.username)})</span></label>
-          </div>`).join('')}
-      </div>
-    </div>` : ''}
+    <!-- RIGHT CANVAS -->
+    <div class="builder-canvas">
+      ${S.error ? `<div class="alert alert-error" style="margin-bottom:18px">⚠ ${S.error}</div>` : ''}
 
-    <div class="card">
-      <div class="card-header">
-        <div>
-          <p class="card-title">Velden</p>
-          <p class="card-subtitle">${bs.fields.length} veld${bs.fields.length!==1?'en':''} toegevoegd</p>
+      <!-- Basisinformatie -->
+      <div class="card">
+        <p class="card-title" style="margin-bottom:14px">Basisinformatie</p>
+        <div class="field-row">
+          <div class="form-group" style="flex:1;min-width:200px">
+            <label>Naam formulier *</label>
+            <input class="form-control" id="bs_name" type="text" placeholder="bijv. Onderhoudsrapport" value="${esc(bs.name)}">
+          </div>
+          <div class="form-group" style="flex:1;min-width:200px">
+            <label>Bestemming e-mailadres *</label>
+            <input class="form-control" id="bs_email" type="email" placeholder="ontvanger@bedrijf.nl" value="${esc(bs.email)}">
+          </div>
         </div>
-        <button class="btn btn-outline btn-sm" id="addFieldBtn">+ Veld toevoegen</button>
+        <div class="form-group" style="margin-bottom:0">
+          <label>Weergavemodus</label>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:4px">
+            <label style="display:flex;align-items:center;gap:8px;padding:9px 14px;border-radius:12px;border:2px solid ${(!bs.mode||bs.mode==='step')?'var(--blue)':'var(--border)'};background:${(!bs.mode||bs.mode==='step')?'var(--blue-light)':'var(--white)'};cursor:pointer;flex:1;min-width:150px">
+              <input type="radio" name="bs_mode" value="step" ${(!bs.mode||bs.mode==='step')?'checked':''} style="accent-color:var(--blue)">
+              <div><div style="font-weight:800;font-size:13px">Stap voor stap</div><div style="font-size:11px;color:var(--text-muted)">Één veld tegelijk</div></div>
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;padding:9px 14px;border-radius:12px;border:2px solid ${bs.mode==='classic'?'var(--blue)':'var(--border)'};background:${bs.mode==='classic'?'var(--blue-light)':'var(--white)'};cursor:pointer;flex:1;min-width:150px">
+              <input type="radio" name="bs_mode" value="classic" ${bs.mode==='classic'?'checked':''} style="accent-color:var(--blue)">
+              <div><div style="font-weight:800;font-size:13px">Alles op één pagina</div><div style="font-size:11px;color:var(--text-muted)">Scroll door alle velden</div></div>
+            </label>
+          </div>
+        </div>
       </div>
-      ${bs.fields.length === 0 ? `<div class="empty" style="padding:24px"><p class="empty-sub">Voeg velden toe met de knop hierboven.</p></div>` : ''}
-      <div id="fieldsList">
-        ${bs.fields.map((f, i) => renderFieldCard(f, i, fieldTypeLabels)).join('')}
+
+      ${monteurs.length > 0 ? `
+      <div class="card">
+        <p class="card-title" style="margin-bottom:10px">Toegang monteurs</p>
+        <div class="user-check-list">
+          ${monteurs.map(u => `
+            <div class="user-check-item">
+              <input type="checkbox" id="au_${u.id}" data-uid="${u.id}" class="au-check" ${bs.allowedUsers.includes(u.id)?'checked':''}>
+              <label for="au_${u.id}">${esc(u.name)} <span class="text-muted text-sm">(${esc(u.username)})</span></label>
+            </div>`).join('')}
+        </div>
+      </div>` : ''}
+
+      <!-- Velden -->
+      <div class="card">
+        <div class="card-header" style="margin-bottom:12px">
+          <p class="card-title">Formuliervelden</p>
+          <span class="text-sm text-muted">${bs.fields.length} veld${bs.fields.length!==1?'en':''} · sleep vanuit de zijbalk</span>
+        </div>
+        <div id="fieldsList">
+          ${fieldsWithDropzones()}
+        </div>
       </div>
     </div>
   </div>`;
@@ -1349,9 +1499,30 @@ function renderFieldCard(f, i, labels) {
   const needsOptions = ['multiselect', 'checkbox'].includes(f.type);
   const needsList = f.type === 'list';
   const isHeading = f.type === 'heading';
+  const isDivider = f.type === 'divider';
   const options = f.options || [];
+
+  // Divider: minimal card
+  if (isDivider) {
+    return `
+    <div class="field-card" data-idx="${i}" draggable="true" style="background:#F8FBFE;border-style:dashed;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px">
+      <div style="display:flex;align-items:center;gap:10px;flex:1">
+        <span style="font-size:18px;opacity:0.4">⋯</span>
+        <hr style="flex:1;border:none;border-top:2px solid var(--border)">
+        <span style="font-size:12px;color:var(--text-muted);font-weight:600;white-space:nowrap">Scheidingslijn</span>
+        <hr style="flex:1;border:none;border-top:2px solid var(--border)">
+        <span style="font-size:18px;opacity:0.4">⋯</span>
+      </div>
+      <div class="flex gap-1">
+        ${i > 0 ? `<button class="btn btn-ghost btn-sm move-up-btn" data-idx="${i}">↑</button>` : ''}
+        ${i < (S.builderState.fields.length-1) ? `<button class="btn btn-ghost btn-sm move-down-btn" data-idx="${i}">↓</button>` : ''}
+        <button class="btn btn-danger btn-sm del-field-btn" data-idx="${i}">🗑</button>
+      </div>
+    </div>`;
+  }
+
   return `
-  <div class="field-card" data-idx="${i}" style="${isHeading ? 'background:linear-gradient(135deg,#EAF3FF,#F0F6FF);border-color:rgba(0,87,184,0.2)' : ''}">
+  <div class="field-card" data-idx="${i}" draggable="true" style="${isHeading ? 'background:linear-gradient(135deg,#EAF3FF,#F0F6FF);border-color:rgba(0,87,184,0.2)' : ''}">
     <div class="field-header">
       <div class="flex items-center gap-1">
         <span class="field-number" style="${isHeading ? 'background:linear-gradient(135deg,#0057B8,#0A79E8)' : ''}">${isHeading ? '📌' : i+1}</span>
@@ -1463,11 +1634,59 @@ function bindFormBuilder() {
     })
   );
 
-  // Add field
-  document.getElementById('addFieldBtn')?.addEventListener('click', () => {
-    S.builderState.fields.push({ id: 'f_' + Date.now(), type: 'text', label: '', required: false, options: [] });
-    render();
+  // ── DRAG & DROP ──────────────────────────────────────────────
+  let dragData = null;
+
+  // Sidebar items → drag new field type
+  document.querySelectorAll('.field-type-item[draggable]').forEach(el => {
+    el.addEventListener('dragstart', e => {
+      dragData = { kind: 'new', fieldType: el.dataset.fieldtype };
+      el.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'copy';
+    });
+    el.addEventListener('dragend', () => { el.classList.remove('dragging'); });
   });
+
+  // Existing field cards → drag to reorder
+  document.querySelectorAll('.field-card[draggable]').forEach(card => {
+    card.addEventListener('dragstart', e => {
+      dragData = { kind: 'move', fromIdx: parseInt(card.dataset.idx) };
+      card.classList.add('dragging-card');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    card.addEventListener('dragend', () => card.classList.remove('dragging-card'));
+  });
+
+  // Drop zones
+  document.querySelectorAll('.drop-zone').forEach(zone => {
+    zone.addEventListener('dragover', e => {
+      e.preventDefault();
+      zone.classList.add('drag-active');
+    });
+    zone.addEventListener('dragleave', e => {
+      if (!zone.contains(e.relatedTarget)) zone.classList.remove('drag-active');
+    });
+    zone.addEventListener('drop', e => {
+      e.preventDefault();
+      zone.classList.remove('drag-active');
+      const pos = parseInt(zone.dataset.pos);
+      if (!dragData) return;
+
+      if (dragData.kind === 'new') {
+        const newField = { id: 'f_' + Date.now(), type: dragData.fieldType, label: '', required: false, options: [] };
+        S.builderState.fields.splice(pos, 0, newField);
+      } else if (dragData.kind === 'move') {
+        const from = dragData.fromIdx;
+        if (from === pos || from === pos - 1) { dragData = null; return; }
+        const [moved] = S.builderState.fields.splice(from, 1);
+        const insertAt = pos > from ? pos - 1 : pos;
+        S.builderState.fields.splice(insertAt, 0, moved);
+      }
+      dragData = null;
+      render();
+    });
+  });
+  // ─────────────────────────────────────────────────────────────
 
   // Field controls
   document.querySelectorAll('.del-field-btn').forEach(b => b.addEventListener('click', () => {
@@ -1963,7 +2182,7 @@ function bindMonteur() {
 
 // --- FORM FILL ---
 function fieldHasValue(f) {
-  if (f.type === 'heading') return true;
+  if (f.type === 'heading' || f.type === 'divider') return true;
   const val = S.formValues[f.id];
   if (f.type === 'photo') return S.photoFiles.length > 0;
   if (f.type === 'signature') return !!S.signatureData;
@@ -1972,6 +2191,7 @@ function fieldHasValue(f) {
 }
 
 function fieldIsVisible(f, fields) {
+  if (f.type === 'divider') return true;
   if (!f.condition || !f.condition.fieldId) return true;
   const val = S.formValues[f.condition.fieldId];
   const cVal = (f.condition.value || '').toLowerCase();
@@ -2140,6 +2360,10 @@ function renderFormFillClassic() {
 function renderFormField(f) {
   const val = S.formValues[f.id];
   const reqMark = f.required ? ' <span style="color:var(--danger)">*</span>' : '';
+
+  if (f.type === 'divider') {
+    return `<hr style="border:none;border-top:2px solid var(--border);margin:8px 0;border-radius:2px">`;
+  }
 
   if (f.type === 'heading') {
     const lines = (f.label || '').split('\n');

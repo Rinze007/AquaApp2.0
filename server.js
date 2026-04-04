@@ -367,7 +367,7 @@ async function sendEmail(form, formData, photos, signature, user) {
   }
 
   for (const field of (form.fields || [])) {
-    if (field.type === 'signature' || field.type === 'photo' || field.type === 'heading') continue;
+    if (['signature','photo','heading','divider'].includes(field.type)) continue;
     if (!isFieldVisible(field, form.fields)) continue; // skip hidden fields
     const val = formData[field.id];
     let displayVal = '—';
