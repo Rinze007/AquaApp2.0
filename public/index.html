@@ -94,6 +94,7 @@ button, input, select, textarea { font: inherit; }
   animation: spin 0.8s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
 
 /* ===== LOGO ===== */
 .logo {
@@ -814,6 +815,7 @@ let S = {
   mySubmissions: [],
   monteurTab: 'forms',
   fillingForm: null,
+  currentFieldIdx: 0,
   formValues: {},
   signatureData: null,
   photoFiles: [],
@@ -1633,6 +1635,7 @@ function bindMonteur() {
     const form = S.myForms.find(f => f.id === t.dataset.id);
     if (!form) return;
     S.fillingForm = form;
+    S.currentFieldIdx = 0;
     S.formValues = {};
     S.signatureData = null;
     S.photoFiles = [];
@@ -1650,22 +1653,76 @@ function bindMonteur() {
 }
 
 // --- FORM FILL ---
+function fieldHasValue(f) {
+  const val = S.formValues[f.id];
+  if (f.type === 'photo') return S.photoFiles.length > 0;
+  if (f.type === 'signature') return !!S.signatureData;
+  if (f.type === 'checkbox') return Array.isArray(val) && val.length > 0;
+  return val !== undefined && val !== null && val !== '';
+}
+
 function renderFormFill() {
   const form = S.fillingForm;
+  const fields = form.fields || [];
+  const total = fields.length;
+  const idx = S.currentFieldIdx;
+  const pct = total === 0 ? 100 : Math.round((idx / total) * 100);
+  const isLast = idx >= total - 1;
+  const currentField = fields[idx];
+  const currentHasValue = currentField ? fieldHasValue(currentField) : true;
+
   return `
   <div class="form-fill-header">
     <button class="back-btn" id="backFromFill">←</button>
-    <div><div class="form-fill-title">${esc(form.name)}</div></div>
+    <div style="flex:1">
+      <div class="form-fill-title">${esc(form.name)}</div>
+      <div style="font-size:12px;opacity:0.8">Stap ${Math.min(idx+1, total)} van ${total}</div>
+    </div>
+    <div style="font-size:13px;font-weight:700;opacity:0.9">${pct}%</div>
   </div>
+
+  <div style="height:6px;background:rgba(255,255,255,0.2)">
+    <div style="height:100%;width:${pct}%;background:white;transition:width 0.4s ease;border-radius:0 3px 3px 0"></div>
+  </div>
+
   <div class="form-fill-body">
     ${S.error ? `<div class="alert alert-error">⚠ ${S.error}</div>` : ''}
-    ${(form.fields||[]).map(f => renderFormField(f)).join('')}
-    <div style="height:80px"></div>
+
+    ${idx > 0 ? `
+    <div style="margin-bottom:20px">
+      ${fields.slice(0, idx).map(f => {
+        const val = S.formValues[f.id];
+        let display = '—';
+        if (f.type === 'photo') display = S.photoFiles.length > 0 ? `📷 ${S.photoFiles.length} foto('s)` : '—';
+        else if (f.type === 'signature') display = S.signatureData ? '✓ Handtekening' : '—';
+        else if (f.type === 'checkbox' && Array.isArray(val)) display = val.join(', ') || '—';
+        else if (val) display = String(val);
+        return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px">
+          <span style="color:var(--text-muted)">${esc(f.label)}</span>
+          <span style="font-weight:600;color:var(--success)">✓ ${esc(display)}</span>
+        </div>`;
+      }).join('')}
+    </div>` : ''}
+
+    ${currentField ? `
+    <div style="animation:fadeIn 0.3s ease">
+      ${renderFormField(currentField)}
+    </div>` : ''}
+
+    <div style="height:100px"></div>
   </div>
+
   <div class="submit-wrap">
-    <button class="btn btn-primary btn-lg" id="submitFormBtn" ${S.loading?'disabled':''}>
-      ${S.loading ? '<span class="spinner" style="width:18px;height:18px;border-width:2px;border-color:rgba(255,255,255,0.3);border-top-color:white"></span> Verzenden...' : '✉ Formulier verzenden'}
-    </button>
+    <div class="flex gap-2">
+      ${idx > 0 ? `<button class="btn btn-ghost" id="prevFieldBtn" style="min-width:80px">← Terug</button>` : ''}
+      ${!isLast ? `
+        <button class="btn btn-primary btn-lg" id="nextFieldBtn" style="flex:1" ${!currentHasValue && currentField?.required ? 'disabled' : ''}>
+          Volgende →
+        </button>` : `
+        <button class="btn btn-primary btn-lg" id="submitFormBtn" style="flex:1" ${S.loading?'disabled':''}>
+          ${S.loading ? '<span class="spinner" style="width:18px;height:18px;border-width:2px;border-color:rgba(255,255,255,0.3);border-top-color:white"></span> Verzenden...' : '✉ Verzenden'}
+        </button>`}
+    </div>
   </div>`;
 }
 
@@ -1743,16 +1800,51 @@ function renderFormField(f) {
 
 function bindMonteur2() {
   document.getElementById('backFromFill')?.addEventListener('click', () => {
-    S.fillingForm = null; S.error = null; S.success = null; render();
+    S.fillingForm = null; S.currentFieldIdx = 0; S.error = null; S.success = null; render();
   });
+
+  // Navigatie: volgende veld
+  document.getElementById('nextFieldBtn')?.addEventListener('click', () => {
+    const fields = S.fillingForm.fields || [];
+    const current = fields[S.currentFieldIdx];
+    if (current?.required && !fieldHasValue(current)) {
+      S.error = `Veld "${current.label}" is verplicht.`; render(); return;
+    }
+    S.error = null;
+    S.currentFieldIdx = Math.min(S.currentFieldIdx + 1, fields.length - 1);
+    render();
+  });
+
+  // Navigatie: vorig veld
+  document.getElementById('prevFieldBtn')?.addEventListener('click', () => {
+    S.error = null;
+    S.currentFieldIdx = Math.max(S.currentFieldIdx - 1, 0);
+    render();
+  });
+
+  // Automatisch doorschakelen bij invullen (optioneel voor radio/checkbox/list)
+  const autoNext = () => {
+    const fields = S.fillingForm.fields || [];
+    const current = fields[S.currentFieldIdx];
+    if (current && fieldHasValue(current) && S.currentFieldIdx < fields.length - 1) {
+      setTimeout(() => { S.currentFieldIdx++; render(); }, 300);
+    }
+  };
 
   // Text/date/email/etc
   document.querySelectorAll('.fill-input').forEach(el => el.addEventListener('input', e => {
     S.formValues[e.target.dataset.id] = e.target.value;
+    // Update next button state without full re-render
+    const nextBtn = document.getElementById('nextFieldBtn');
+    if (nextBtn) {
+      const fields = S.fillingForm.fields || [];
+      const current = fields[S.currentFieldIdx];
+      nextBtn.disabled = current?.required && !fieldHasValue(current);
+    }
   }));
   // Radio
   document.querySelectorAll('.fill-radio').forEach(el => el.addEventListener('change', e => {
-    if (e.target.checked) S.formValues[e.target.dataset.id] = e.target.value;
+    if (e.target.checked) { S.formValues[e.target.dataset.id] = e.target.value; autoNext(); }
   }));
   // Checkbox
   document.querySelectorAll('.fill-checkbox').forEach(el => el.addEventListener('change', () => {

@@ -45,6 +45,7 @@ function writeJSON(file, data) {
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 if (!fs.existsSync(listsDir)) fs.mkdirSync(listsDir, { recursive: true });
 
+const testFormId = 'test-form-default-id';
 if (!fs.existsSync(path.join(dataDir, 'users.json'))) {
   writeJSON('users.json', [
     {
@@ -58,15 +59,28 @@ if (!fs.existsSync(path.join(dataDir, 'users.json'))) {
     {
       id: uuidv4(),
       username: 'Monteur',
-      password: bcrypt.hashSync('Monteur', 10),
+      password: bcrypt.hashSync('1', 10),
       name: 'Monteur',
       role: 'monteur',
-      allowedForms: []
+      allowedForms: [testFormId]
     }
   ]);
   console.log('Standaard gebruikers aangemaakt.');
 }
-if (!fs.existsSync(path.join(dataDir, 'forms.json'))) writeJSON('forms.json', []);
+if (!fs.existsSync(path.join(dataDir, 'forms.json'))) {
+  writeJSON('forms.json', [{
+    id: testFormId,
+    name: 'TEST FORM',
+    email: 'r.zijlstra@aqua.nl',
+    fields: [
+      { id: 'f_datum', type: 'date', label: 'Datum', required: true },
+      { id: 'f_email', type: 'email', label: 'Email', required: false },
+      { id: 'f_foto', type: 'photo', label: 'Foto', required: false }
+    ],
+    createdAt: new Date().toISOString()
+  }]);
+  console.log('Standaard TEST FORM aangemaakt.');
+}
 if (!fs.existsSync(path.join(dataDir, 'lists.json'))) writeJSON('lists.json', []);
 
 // ===== AUTH MIDDLEWARE =====
