@@ -1347,7 +1347,10 @@ function renderFieldCard(f, i, labels) {
     <div class="field-row">
       <div class="form-group">
         <label>${isHeading ? 'Koptekst / instructietekst' : 'Label'}</label>
-        <input class="form-control field-label" data-idx="${i}" type="text" placeholder="${isHeading ? 'bv. Stap 1 – Locatie en regio' : 'Veldnaam'}" value="${esc(f.label||'')}">
+        ${isHeading
+          ? `<textarea class="form-control field-label" data-idx="${i}" placeholder="bv. Stap 1 – Locatie en regio&#10;Selecteer de juiste gegevens voordat je verder gaat:&#10;• Wat is er aan de hand?&#10;• Waar bevindt het probleem zich?" style="min-height:110px;resize:vertical;font-size:14px;line-height:1.6">${esc(f.label||'')}</textarea>`
+          : `<input class="form-control field-label" data-idx="${i}" type="text" placeholder="Veldnaam" value="${esc(f.label||'')}">`
+        }
       </div>
       <div class="form-group">
         <label>Type</label>
@@ -1928,7 +1931,9 @@ function renderFormFill() {
     </div>` : ''}
 
     ${currentField ? `
-    <div class="field-step" style="padding: 20px;background:rgba(255,255,255,0.8);border-radius:20px;backdrop-filter:blur(8px);border:1px solid rgba(217,229,241,0.8);box-shadow:0 8px 32px rgba(15,39,68,0.07)">
+    <div class="field-step" style="${currentField.type === 'heading'
+      ? ''
+      : 'padding:20px;background:rgba(255,255,255,0.8);border-radius:20px;backdrop-filter:blur(8px);border:1px solid rgba(217,229,241,0.8);box-shadow:0 8px 32px rgba(15,39,68,0.07)'}">
       ${renderFormField(currentField)}
     </div>` : ''}
 
@@ -1954,13 +1959,25 @@ function renderFormField(f) {
   const reqMark = f.required ? ' <span style="color:var(--danger)">*</span>' : '';
 
   if (f.type === 'heading') {
-    // Parse label: first line = title, remaining lines = body text
     const lines = (f.label || '').split('\n');
     const title = lines[0];
     const body = lines.slice(1).join('\n').trim();
-    return `<div style="text-align:left">
-      <div style="font-size:18px;font-weight:900;color:var(--blue);margin-bottom:${body?'10px':'0'};letter-spacing:-0.3px">${esc(title)}</div>
-      ${body ? `<div style="font-size:14px;color:var(--text-muted);line-height:1.7;white-space:pre-line">${esc(body)}</div>` : ''}
+    // Render body: lines starting with • become list items
+    const renderBody = (text) => {
+      if (!text) return '';
+      return text.split('\n').map(line => {
+        const trimmed = line.trim();
+        if (trimmed.startsWith('•') || trimmed.startsWith('-')) {
+          return `<li style="margin-left:16px;margin-bottom:2px">${esc(trimmed.replace(/^[•\-]\s*/,''))}</li>`;
+        }
+        return trimmed ? `<p style="margin-bottom:4px">${esc(trimmed)}</p>` : '';
+      }).join('');
+    };
+    const bodyHtml = renderBody(body);
+    const hasList = bodyHtml.includes('<li');
+    return `<div style="background:linear-gradient(135deg,#dbeafe,#eff6ff);border:1px solid rgba(0,87,184,0.18);border-radius:16px;padding:18px 20px;text-align:left">
+      <div style="font-size:16px;font-weight:900;color:#1d4ed8;margin-bottom:${body?'10px':'0'};letter-spacing:-0.2px">${esc(title)}</div>
+      ${body ? `<div style="font-size:14px;color:#374151;line-height:1.7">${hasList ? `<ul style="list-style:disc;padding-left:4px">${bodyHtml}</ul>` : bodyHtml}</div>` : ''}
     </div>`;
   }
 
