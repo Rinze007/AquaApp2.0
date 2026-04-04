@@ -350,20 +350,25 @@ async function sendEmail(form, formData, photos, signature, user) {
   text += `Datum     : ${datumStr} om ${tijdStr}\n`;
   text += `${'═'.repeat(45)}\n\n`;
 
-  // Helper: check if a field is visible based on its condition and submitted formData
+  // Helper: check if a field is visible based on form-level conditions and submitted formData
   function isFieldVisible(field, allFields) {
-    if (!field.condition || !field.condition.fieldId) return true;
-    const val = formData[field.condition.fieldId];
-    const cVal = (field.condition.value || '').toLowerCase();
-    const actual = (val === undefined || val === null) ? '' : String(val).toLowerCase();
-    switch (field.condition.operator) {
-      case 'equals':     return actual === cVal;
-      case 'not_equals': return actual !== cVal;
-      case 'contains':   return actual.includes(cVal);
-      case 'not_empty':  return actual !== '';
-      case 'empty':      return actual === '';
-      default: return true;
-    }
+    if (field.type === 'divider' || field.type === 'heading') return true;
+    const conditions = (form.conditions) || [];
+    const relevantConds = conditions.filter(c => c.thenFieldId === field.id && c.ifFieldId);
+    if (relevantConds.length === 0) return true; // geen conditie → altijd zichtbaar
+    return relevantConds.some(c => {
+      const val = formData[c.ifFieldId];
+      const actual = (val === undefined || val === null) ? '' : String(val).toLowerCase();
+      const cVal = (c.value || '').toLowerCase();
+      switch (c.operator) {
+        case 'equals':     return actual === cVal;
+        case 'not_equals': return actual !== cVal;
+        case 'contains':   return actual.includes(cVal);
+        case 'not_empty':  return actual !== '';
+        case 'empty':      return actual === '';
+        default: return true;
+      }
+    });
   }
 
   for (const field of (form.fields || [])) {
