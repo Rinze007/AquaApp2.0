@@ -350,13 +350,30 @@ async function sendEmail(form, formData, photos, signature, user) {
   text += `Datum     : ${datumStr} om ${tijdStr}\n`;
   text += `${'═'.repeat(45)}\n\n`;
 
+  // Helper: check if a field is visible based on its condition and submitted formData
+  function isFieldVisible(field, allFields) {
+    if (!field.condition || !field.condition.fieldId) return true;
+    const val = formData[field.condition.fieldId];
+    const cVal = (field.condition.value || '').toLowerCase();
+    const actual = (val === undefined || val === null) ? '' : String(val).toLowerCase();
+    switch (field.condition.operator) {
+      case 'equals':     return actual === cVal;
+      case 'not_equals': return actual !== cVal;
+      case 'contains':   return actual.includes(cVal);
+      case 'not_empty':  return actual !== '';
+      case 'empty':      return actual === '';
+      default: return true;
+    }
+  }
+
   for (const field of (form.fields || [])) {
-    if (field.type === 'signature' || field.type === 'photo') continue;
+    if (field.type === 'signature' || field.type === 'photo' || field.type === 'heading') continue;
+    if (!isFieldVisible(field, form.fields)) continue; // skip hidden fields
     const val = formData[field.id];
     let displayVal = '—';
     if (field.type === 'checkbox' && Array.isArray(val)) displayVal = val.join(', ') || '—';
     else if (val !== undefined && val !== null && val !== '') displayVal = String(val);
-    text += `${field.label}: ${displayVal}\n`;
+    text += `${field.label.split('\n')[0]}: ${displayVal}\n`;
   }
   text += `\n— Verzonden via AquaApp\n`;
 

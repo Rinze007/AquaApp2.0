@@ -1385,6 +1385,43 @@ function renderFieldCard(f, i, labels) {
         ${S.lists.map(l => `<option value="${l.id}" ${f.listId===l.id?'selected':''}>${esc(l.name)} (${l.count} items)</option>`).join('')}
       </select>
     </div>` : ''}
+
+  ${renderConditionSection(f, i)}
+  </div>`;
+}
+
+function renderConditionSection(f, i) {
+  const allFields = S.builderState.fields;
+  const otherFields = allFields.filter((x, xi) => xi !== i && x.id && x.label);
+  const cond = f.condition || {};
+  const hasCondition = !!cond.fieldId;
+
+  return `<div style="margin-top:14px;padding-top:14px;border-top:1px dashed var(--border)">
+    <div class="toggle-row" style="margin-bottom:${hasCondition?'12px':'0'}">
+      <label class="toggle">
+        <input type="checkbox" class="cond-enabled" data-idx="${i}" ${hasCondition?'checked':''}>
+        <span class="toggle-slider"></span>
+      </label>
+      <span class="text-sm" style="font-weight:700">⚡ Toon dit veld alleen als...</span>
+    </div>
+    ${hasCondition ? `
+    <div class="cond-row" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:4px">
+      <select class="form-control cond-field" data-idx="${i}" style="flex:2;min-width:140px;font-size:13px">
+        <option value="">-- Kies een veld --</option>
+        ${otherFields.map(x => `<option value="${x.id}" ${cond.fieldId===x.id?'selected':''}>${esc(x.label.split('\n')[0])}</option>`).join('')}
+      </select>
+      <select class="form-control cond-op" data-idx="${i}" style="flex:1;min-width:110px;font-size:13px">
+        <option value="equals"     ${cond.operator==='equals'    ?'selected':''}>is gelijk aan</option>
+        <option value="not_equals" ${cond.operator==='not_equals'?'selected':''}>is niet gelijk aan</option>
+        <option value="contains"   ${cond.operator==='contains'  ?'selected':''}>bevat</option>
+        <option value="not_empty"  ${cond.operator==='not_empty' ?'selected':''}>is ingevuld</option>
+        <option value="empty"      ${cond.operator==='empty'     ?'selected':''}>is leeg</option>
+      </select>
+      ${(cond.operator === 'not_empty' || cond.operator === 'empty') ? '' : `
+      <input class="form-control cond-val" data-idx="${i}" type="text" placeholder="Waarde" value="${esc(cond.value||'')}" style="flex:1;min-width:100px;font-size:13px">`}
+    </div>
+    <div style="font-size:11px;color:var(--text-muted);margin-top:6px;opacity:0.8">💡 Dit veld wordt verborgen als de voorwaarde niet geldt.</div>
+    ` : ''}
   </div>`;
 }
 
@@ -1440,6 +1477,34 @@ function bindFormBuilder() {
   }));
   document.querySelectorAll('.field-listid').forEach(sel => sel.addEventListener('change', e => {
     S.builderState.fields[parseInt(e.target.dataset.idx)].listId = e.target.value;
+  }));
+
+  // Conditions
+  document.querySelectorAll('.cond-enabled').forEach(cb => cb.addEventListener('change', e => {
+    const idx = parseInt(e.target.dataset.idx);
+    if (e.target.checked) {
+      S.builderState.fields[idx].condition = { fieldId: '', operator: 'equals', value: '' };
+    } else {
+      delete S.builderState.fields[idx].condition;
+    }
+    render();
+  }));
+  document.querySelectorAll('.cond-field').forEach(sel => sel.addEventListener('change', e => {
+    const idx = parseInt(e.target.dataset.idx);
+    if (!S.builderState.fields[idx].condition) S.builderState.fields[idx].condition = {};
+    S.builderState.fields[idx].condition.fieldId = e.target.value;
+    render();
+  }));
+  document.querySelectorAll('.cond-op').forEach(sel => sel.addEventListener('change', e => {
+    const idx = parseInt(e.target.dataset.idx);
+    if (!S.builderState.fields[idx].condition) S.builderState.fields[idx].condition = {};
+    S.builderState.fields[idx].condition.operator = e.target.value;
+    render();
+  }));
+  document.querySelectorAll('.cond-val').forEach(inp => inp.addEventListener('input', e => {
+    const idx = parseInt(e.target.dataset.idx);
+    if (!S.builderState.fields[idx].condition) S.builderState.fields[idx].condition = {};
+    S.builderState.fields[idx].condition.value = e.target.value;
   }));
 
   // Options
@@ -1876,7 +1941,7 @@ function bindMonteur() {
 
 // --- FORM FILL ---
 function fieldHasValue(f) {
-  if (f.type === 'heading') return true; // heading has no value to fill in
+  if (f.type === 'heading') return true;
   const val = S.formValues[f.id];
   if (f.type === 'photo') return S.photoFiles.length > 0;
   if (f.type === 'signature') return !!S.signatureData;
@@ -1884,17 +1949,59 @@ function fieldHasValue(f) {
   return val !== undefined && val !== null && val !== '';
 }
 
+function fieldIsVisible(f, fields) {
+  if (!f.condition || !f.condition.fieldId) return true;
+  const val = S.formValues[f.condition.fieldId];
+  const cVal = (f.condition.value || '').toLowerCase();
+  const actual = val === undefined || val === null ? '' : String(val).toLowerCase();
+  switch (f.condition.operator) {
+    case 'equals':     return actual === cVal;
+    case 'not_equals': return actual !== cVal;
+    case 'contains':   return actual.includes(cVal);
+    case 'not_empty':  return actual !== '';
+    case 'empty':      return actual === '';
+    default: return true;
+  }
+}
+
+function getNextIdx(from, fields) {
+  let i = from + 1;
+  while (i < fields.length && !fieldIsVisible(fields[i], fields)) i++;
+  return Math.min(i, fields.length - 1);
+}
+
+function getPrevIdx(from, fields) {
+  let i = from - 1;
+  while (i > 0 && !fieldIsVisible(fields[i], fields)) i--;
+  return Math.max(i, 0);
+}
+
+function isLastVisible(idx, fields) {
+  for (let i = idx + 1; i < fields.length; i++) {
+    if (fieldIsVisible(fields[i], fields)) return false;
+  }
+  return true;
+}
+
 function renderFormFill() {
   const form = S.fillingForm;
   const fields = form.fields || [];
-  const total = fields.length;
+
+  // Auto-advance if current field is invisible
+  while (S.currentFieldIdx < fields.length && !fieldIsVisible(fields[S.currentFieldIdx], fields)) {
+    S.currentFieldIdx++;
+  }
+  if (S.currentFieldIdx >= fields.length) S.currentFieldIdx = fields.length - 1;
+
   const idx = S.currentFieldIdx;
-  // Progress only counts non-heading fields
-  const inputFields = fields.filter(f => f.type !== 'heading');
-  const inputIdx = fields.slice(0, idx).filter(f => f.type !== 'heading').length;
-  const pct = inputFields.length === 0 ? 100 : Math.round((inputIdx / inputFields.length) * 100);
-  const isLast = idx >= total - 1;
   const currentField = fields[idx];
+
+  // Progress: visible non-heading fields only
+  const visibleInputFields = fields.filter(f => f.type !== 'heading' && fieldIsVisible(f, fields));
+  const visibleInputDone  = fields.slice(0, idx).filter(f => f.type !== 'heading' && fieldIsVisible(f, fields)).length;
+  const pct = visibleInputFields.length === 0 ? 100 : Math.round((visibleInputDone / visibleInputFields.length) * 100);
+
+  const isLast = isLastVisible(idx, fields);
   const currentHasValue = currentField ? fieldHasValue(currentField) : true;
 
   return `
@@ -1902,7 +2009,7 @@ function renderFormFill() {
     <button class="back-btn" id="backFromFill">←</button>
     <div style="flex:1">
       <div class="form-fill-title">${esc(form.name)}</div>
-      <div style="font-size:12px;opacity:0.8">Vraag ${inputIdx + (currentField?.type !== 'heading' ? 1 : 0)} van ${inputFields.length}</div>
+      <div style="font-size:12px;opacity:0.8">Vraag ${visibleInputDone + (currentField?.type !== 'heading' ? 1 : 0)} van ${visibleInputFields.length}</div>
     </div>
     <div style="font-size:13px;font-weight:700;opacity:0.9">${pct}%</div>
   </div>
@@ -1916,7 +2023,7 @@ function renderFormFill() {
 
     ${idx > 0 ? `
     <div style="margin-bottom:20px;animation:fadeIn 0.4s ease">
-      ${fields.slice(0, idx).filter(f => f.type !== 'heading').map((f, fi) => {
+      ${fields.slice(0, idx).filter(f => f.type !== 'heading' && fieldIsVisible(f, fields)).map((f, fi) => {
         const val = S.formValues[f.id];
         let display = '—';
         if (f.type === 'photo') display = S.photoFiles.length > 0 ? `📷 ${S.photoFiles.length} foto('s)` : '—';
@@ -2059,26 +2166,26 @@ function bindMonteur2() {
     const fields = S.fillingForm.fields || [];
     const current = fields[S.currentFieldIdx];
     if (current?.required && !fieldHasValue(current)) {
-      S.error = `Veld "${current.label}" is verplicht.`; render(); return;
+      S.error = `Veld "${current.label.split('\n')[0]}" is verplicht.`; render(); return;
     }
     S.error = null;
-    S.currentFieldIdx = Math.min(S.currentFieldIdx + 1, fields.length - 1);
+    S.currentFieldIdx = getNextIdx(S.currentFieldIdx, fields);
     render();
   });
 
   // Navigatie: vorig veld
   document.getElementById('prevFieldBtn')?.addEventListener('click', () => {
     S.error = null;
-    S.currentFieldIdx = Math.max(S.currentFieldIdx - 1, 0);
+    S.currentFieldIdx = getPrevIdx(S.currentFieldIdx, S.fillingForm.fields || []);
     render();
   });
 
-  // Automatisch doorschakelen bij invullen (optioneel voor radio/checkbox/list)
+  // Automatisch doorschakelen bij invullen (radio/list)
   const autoNext = () => {
     const fields = S.fillingForm.fields || [];
     const current = fields[S.currentFieldIdx];
-    if (current && fieldHasValue(current) && S.currentFieldIdx < fields.length - 1) {
-      setTimeout(() => { S.currentFieldIdx++; render(); }, 300);
+    if (current && fieldHasValue(current) && !isLastVisible(S.currentFieldIdx, fields)) {
+      setTimeout(() => { S.currentFieldIdx = getNextIdx(S.currentFieldIdx, fields); render(); }, 300);
     }
   };
 
