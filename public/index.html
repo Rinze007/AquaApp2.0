@@ -1295,6 +1295,25 @@ function renderFormBuilder() {
         <label>Bestemming e-mailadres *</label>
         <input class="form-control" id="bs_email" type="email" placeholder="ontvanger@bedrijf.nl" value="${esc(bs.email)}">
       </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label>Weergavemodus</label>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:4px">
+          <label style="display:flex;align-items:center;gap:8px;padding:10px 16px;border-radius:12px;border:2px solid ${(!bs.mode||bs.mode==='step')?'var(--blue)':'var(--border)'};background:${(!bs.mode||bs.mode==='step')?'var(--blue-light)':'var(--white)'};cursor:pointer;flex:1;min-width:160px">
+            <input type="radio" name="bs_mode" value="step" ${(!bs.mode||bs.mode==='step')?'checked':''} style="accent-color:var(--blue)">
+            <div>
+              <div style="font-weight:800;font-size:13px">Stap voor stap</div>
+              <div style="font-size:11px;color:var(--text-muted)">Één veld tegelijk, voortgangsbalk</div>
+            </div>
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;padding:10px 16px;border-radius:12px;border:2px solid ${bs.mode==='classic'?'var(--blue)':'var(--border)'};background:${bs.mode==='classic'?'var(--blue-light)':'var(--white)'};cursor:pointer;flex:1;min-width:160px">
+            <input type="radio" name="bs_mode" value="classic" ${bs.mode==='classic'?'checked':''} style="accent-color:var(--blue)">
+            <div>
+              <div style="font-weight:800;font-size:13px">Alles op één pagina</div>
+              <div style="font-size:11px;color:var(--text-muted)">Scroll door alle velden, zoals JotForm</div>
+            </div>
+          </label>
+        </div>
+      </div>
     </div>
 
     ${monteurs.length > 0 ? `
@@ -1433,6 +1452,9 @@ function bindFormBuilder() {
   // Sync base fields
   document.getElementById('bs_name')?.addEventListener('input', e => S.builderState.name = e.target.value);
   document.getElementById('bs_email')?.addEventListener('input', e => S.builderState.email = e.target.value);
+  document.querySelectorAll('input[name="bs_mode"]').forEach(r => r.addEventListener('change', e => {
+    S.builderState.mode = e.target.value; render();
+  }));
 
   // Allowed users
   document.querySelectorAll('.au-check').forEach(cb =>
@@ -1987,6 +2009,10 @@ function renderFormFill() {
   const form = S.fillingForm;
   const fields = form.fields || [];
 
+  // Classic mode: show all fields on one page
+  if (form.mode === 'classic') return renderFormFillClassic();
+
+
   // Auto-advance if current field is invisible
   while (S.currentFieldIdx < fields.length && !fieldIsVisible(fields[S.currentFieldIdx], fields)) {
     S.currentFieldIdx++;
@@ -2058,6 +2084,56 @@ function renderFormFill() {
           ${S.loading ? '<span class="spinner" style="width:18px;height:18px;border-width:2px;border-color:rgba(255,255,255,0.3);border-top-color:white"></span> Verzenden...' : '✉ Verzenden'}
         </button>`}
     </div>
+  </div>`;
+}
+
+// ── CLASSIC MODE (all fields on one page) ──────────────────────────────────
+function renderFormFillClassic() {
+  const form = S.fillingForm;
+  const fields = (form.fields || []).filter(f => fieldIsVisible(f, form.fields || []));
+  return `
+  <div class="form-fill-header">
+    <button class="back-btn" id="backFromFill">←</button>
+    <div style="flex:1">
+      <div class="form-fill-title">${esc(form.name)}</div>
+    </div>
+  </div>
+
+  <div class="form-fill-body" style="max-width:640px">
+    ${S.error   ? `<div class="alert alert-error"   style="animation:slideInUp 0.4s ease">⚠ ${S.error}</div>`   : ''}
+    ${S.success ? `<div class="alert alert-success" style="animation:slideInUp 0.4s ease">✓ ${S.success}</div>` : ''}
+
+    ${fields.map((f, fi) => {
+      if (f.type === 'heading') {
+        const lines = (f.label || '').split('\n');
+        const title = lines[0];
+        const body  = lines.slice(1).join('\n').trim();
+        const renderBody = (text) => text.split('\n').map(line => {
+          const t = line.trim();
+          if (t.startsWith('•') || t.startsWith('-'))
+            return `<li style="margin-left:16px;margin-bottom:2px">${esc(t.replace(/^[•\-]\s*/,''))}</li>`;
+          return t ? `<p style="margin-bottom:4px">${esc(t)}</p>` : '';
+        }).join('');
+        const bodyHtml = body ? renderBody(body) : '';
+        const hasList  = bodyHtml.includes('<li');
+        return `
+        <div style="background:linear-gradient(135deg,#dbeafe,#eff6ff);border:1px solid rgba(0,87,184,0.18);border-radius:16px;padding:16px 20px;margin-bottom:18px;margin-top:${fi>0?'28px':'0'};animation:fadeIn 0.4s ease">
+          <div style="font-size:15px;font-weight:900;color:#1d4ed8;margin-bottom:${body?'8px':'0'}">${esc(title)}</div>
+          ${body ? `<div style="font-size:13px;color:#374151;line-height:1.7">${hasList?`<ul style="list-style:disc;padding-left:4px">${bodyHtml}</ul>`:bodyHtml}</div>` : ''}
+        </div>`;
+      }
+      return `<div class="card" style="margin-bottom:14px;animation:fadeIn 0.4s ${fi*0.04}s ease both">
+        ${renderFormField(f)}
+      </div>`;
+    }).join('')}
+
+    <div style="height:90px"></div>
+  </div>
+
+  <div class="submit-wrap">
+    <button class="btn btn-primary btn-lg" id="submitFormBtn" ${S.loading?'disabled':''}>
+      ${S.loading ? '<span class="spinner" style="width:18px;height:18px;border-width:2px;border-color:rgba(255,255,255,0.3);border-top-color:white"></span> Verzenden...' : '✉ Formulier verzenden'}
+    </button>
   </div>`;
 }
 
@@ -2310,12 +2386,17 @@ async function submitForm() {
   const form = S.fillingForm;
   S.error = null;
 
-  // Validate required fields
+  // Validate required fields (skip hidden fields)
   for (const field of (form.fields||[])) {
     if (!field.required) continue;
+    if (!fieldIsVisible(field, form.fields||[])) continue;
+    if (field.type === 'photo') {
+      if (S.photoFiles.length === 0) { S.error = `Veld "${field.label.split('\n')[0]}" is verplicht — voeg minstens één foto toe.`; render(); return; }
+      continue;
+    }
     const val = field.type === 'signature' ? S.signatureData : S.formValues[field.id];
     const empty = val === undefined || val === null || val === '' || (Array.isArray(val) && val.length === 0);
-    if (empty) { S.error = `Veld "${field.label}" is verplicht.`; render(); return; }
+    if (empty) { S.error = `Veld "${field.label.split('\n')[0]}" is verplicht.`; render(); return; }
   }
 
   S.loading = true; render();
