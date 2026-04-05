@@ -459,6 +459,7 @@ app.post('/api/submit/:formId', authMiddleware, upload.fields([{ name: 'photos',
     }
 
     // Inzending opslaan
+    const photoUrls = photos.map(p => `/uploads/${path.basename(p.path)}`);
     const submissions = readJSON('submissions.json');
     submissions.push({
       id: uuidv4(),
@@ -468,12 +469,13 @@ app.post('/api/submit/:formId', authMiddleware, upload.fields([{ name: 'photos',
       userName: req.user.name,
       data: formData,
       photoCount: photos.length,
+      photoUrls,
       hasSignature: !!signature,
       submittedAt: new Date().toISOString()
     });
     writeJSON('submissions.json', submissions);
 
-    photos.forEach(p => { if (fs.existsSync(p.path)) fs.unlinkSync(p.path); });
+    // Foto's NIET verwijderen — admin moet ze kunnen bekijken
     res.json({ success: true, message: 'Formulier succesvol verzonden!' });
   } catch (err) {
     photoPaths.forEach(p => { if (fs.existsSync(p)) fs.unlinkSync(p); });
