@@ -17,7 +17,6 @@ const JWT_SECRET = process.env.JWT_SECRET || 'aquaapp-geheim-verander-dit-in-pro
 // ===== MIDDLEWARE =====
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
-app.use('/uploads', express.static(uploadDir));
 app.use(express.static(path.join(__dirname, 'public'), {
   setHeaders(res, filePath) {
     if (filePath.endsWith('index.html')) {
@@ -31,6 +30,7 @@ app.use(express.static(path.join(__dirname, 'public'), {
 // ===== FILE UPLOAD =====
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+app.use('/uploads', express.static(uploadDir));
 
 const storage = multer.diskStorage({
   destination: uploadDir,
