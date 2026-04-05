@@ -2,7 +2,7 @@
 <html lang="nl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#0057B8">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -1530,49 +1530,126 @@ tr:hover td { background: rgba(248,251,254,0.95); }
   margin: 8px 0;
 }
 
-/* ===== MOBILE ===== */
-@media (max-width: 760px) {
-  .topnav {
-    height: auto;
-    padding: 14px 16px;
-    align-items: flex-start;
-    gap: 10px;
-    flex-direction: column;
-  }
-  .tabs {
-    top: 92px;
-    padding: 0 12px;
-  }
-  .page-content,
-  .form-fill-body {
-    padding: 18px 16px 22px;
-  }
-  .card { padding: 18px; border-radius: 18px; }
-  .field-row .form-group { min-width: 100%; }
-  .section-header,
-  .card-header {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-  .form-grid {
-    grid-template-columns: 1fr;
-  }
+/* ===== RESPONSIVE — TABLET ===== */
+@media (max-width: 900px) {
+  .stat-grid { grid-template-columns: repeat(2, 1fr); }
+  .quick-actions { grid-template-columns: 1fr; }
 }
 
-@media (max-width: 480px) {
-  .login-card {
-    padding: 32px 22px 24px;
-    border-radius: 22px;
+/* ===== RESPONSIVE — MOBILE ===== */
+@media (max-width: 760px) {
+
+  /* Navbar: compact horizontaal, naam verborgen */
+  .topnav {
+    height: 56px;
+    padding: 0 16px;
+    flex-direction: row;
+    align-items: center;
   }
-  .login-logo .logo {
-    font-size: 36px;
+  .topnav .logo { font-size: 20px; }
+  .nav-user > span:not(.nav-avatar) { display: none; }
+  .nav-user { gap: 6px; }
+  .nav-logout { padding: 7px 12px; font-size: 12px; }
+
+  /* Tabs: horizontaal scrollbaar, altijd aan top */
+  .tabs {
+    top: 56px;
+    padding: 0 8px;
+    gap: 0;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
   }
-  .page-content { padding: 16px 14px 20px; }
-  .topnav { padding: 12px 14px; }
-  .tabs { top: 98px; }
-  .tab { padding: 14px 14px 12px; font-size: 13px; }
-  .btn-lg { font-size: 15px; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab { padding: 14px 12px 12px; font-size: 13px; white-space: nowrap; }
+
+  /* Content */
+  .page-content { padding: 16px 14px 24px; }
+  .form-fill-body { padding: 16px 14px 20px; }
+  .card { padding: 16px; border-radius: 18px; }
+  .card:hover { transform: none; } /* geen hover-lift op touch */
+
+  /* Grid layouts */
+  .form-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .stat-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .section-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .card-header { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .field-row .form-group { min-width: 100%; }
+
+  /* Dashboard stat cards */
+  .stat-card { padding: 18px 16px 14px; }
+  .stat-number { font-size: 34px; }
+
+  /* Greeting hero */
+  .greeting-hero { padding: 24px 20px 20px; border-radius: 20px; }
+  .greeting-name { font-size: 22px; }
+  .greeting-emoji { font-size: 44px; right: 18px; top: 28px; transform: none; }
+  .greeting-stats { gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+  .greeting-stat-item { padding: 10px 14px; }
+  .greeting-stat-num { font-size: 20px; }
+
+  /* Form fill — mobiel vriendelijk */
+  .form-fill-header { padding: 12px 14px; }
+  .form-fill-title { font-size: 16px; }
+  .back-btn { width: 42px; height: 42px; font-size: 18px; }
+
+  /* Sticky submit balk */
+  .submit-wrap {
+    padding: 12px 14px;
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+  }
+
+  /* Grotere touch-targets voor form controls */
+  .form-control { padding: 14px 16px; font-size: 16px !important; /* voorkomt iOS zoom */ }
+  .btn-lg { padding: 16px 20px; font-size: 16px; }
+  .btn { min-height: 44px; }
+
+  /* Handtekening */
   .sig-canvas { height: 160px; }
+
+  /* Tabel: scrollbaar */
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table { min-width: 500px; }
+
+  /* Modal: volledig scherm op mobiel */
+  .modal {
+    border-radius: 24px 24px 0 0;
+    max-height: 92vh;
+    padding: 20px 18px;
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
+  }
+
+  /* Profiel */
+  .submitted-check { width: 80px; height: 80px; font-size: 36px; }
+  .submitted-title { font-size: 22px; }
+}
+
+/* ===== RESPONSIVE — SMALL PHONE ===== */
+@media (max-width: 420px) {
+  .topnav { padding: 0 12px; }
+  .page-content { padding: 14px 12px 20px; }
+  .form-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .stat-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .login-card { padding: 28px 18px 22px; border-radius: 20px; }
+  .login-logo .logo { font-size: 34px; }
+  .greeting-name { font-size: 19px; }
+  .greeting-emoji { display: none; } /* te krap op 375px */
+  .greeting-stats { gap: 6px; }
+  .greeting-stat-item { padding: 8px 10px; flex: 1; }
+  .tab { padding: 12px 10px; font-size: 12px; }
+  .stat-number { font-size: 28px; letter-spacing: -1px; }
+  .btn-lg { padding: 15px 16px; }
+  .form-tile-cover { height: 64px; font-size: 26px; }
+}
+
+/* ===== iOS SAFE AREAS ===== */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .submit-wrap {
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+  }
+  .tabs {
+    padding-left: max(8px, env(safe-area-inset-left));
+    padding-right: max(8px, env(safe-area-inset-right));
+  }
 }
   </style>
 </head>
@@ -3630,7 +3707,7 @@ function renderFormFill() {
       ${renderFormField(currentField)}
     </div>` : ''}
 
-    <div style="height:100px"></div>
+    <div style="height:120px"></div>
   </div>
 
   <div class="submit-wrap">
