@@ -100,6 +100,11 @@ body {
   min-height: 100vh;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  transition: background 0.3s ease, color 0.3s ease;
+}
+[data-theme="dark"] body {
+  background: #0B1424;
+  color: #F1F5F9;
 }
 
 /* Animated aurora mesh background */
@@ -134,6 +139,21 @@ body::before {
 
 #app { min-height: 100vh; position: relative; z-index: 1; }
 [data-theme="dark"] { background: #0B1424; }
+[data-theme="dark"] .modal { background: #1A2535; color: #F1F5F9; }
+[data-theme="dark"] .login-card { background: rgba(26,37,53,0.97); }
+[data-theme="dark"] .submit-wrap { background: rgba(13,23,38,0.96); border-top-color: rgba(255,255,255,0.08); }
+[data-theme="dark"] .field-card { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.08); }
+[data-theme="dark"] .dropdown-list { background: #1A2535; border-color: rgba(255,255,255,0.12); }
+[data-theme="dark"] .dropdown-item:hover { background: rgba(0,87,184,0.2); }
+[data-theme="dark"] .alert-info { background: rgba(0,87,184,0.15); color: #93C5FD; }
+[data-theme="dark"] .badge-grey { background: rgba(255,255,255,0.1); color: #94A3B8; }
+[data-theme="dark"] .badge-blue { background: rgba(0,87,184,0.2); color: #93C5FD; }
+[data-theme="dark"] .empty-text { color: #F1F5F9; }
+[data-theme="dark"] .section-title { color: #F1F5F9; }
+[data-theme="dark"] .card-title { color: #F1F5F9; }
+[data-theme="dark"] .modal-title { color: #F1F5F9; }
+[data-theme="dark"] .modal-close { background: rgba(255,255,255,0.08); color: #94A3B8; }
+[data-theme="dark"] td { border-bottom-color: rgba(255,255,255,0.06); }
 
 #app { min-height: 100vh; }
 
