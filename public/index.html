@@ -1903,9 +1903,11 @@ async function initAfterLogin() {
   if (S.user.role === 'admin') {
     await loadAdminData();
     S.view = 'admin';
+    S.adminTab = 'dashboard';
   } else {
     await loadMonteurData();
     S.view = 'monteur';
+    S.monteurTab = 'forms';
   }
   render();
 }
