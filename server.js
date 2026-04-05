@@ -17,6 +17,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'aquaapp-geheim-verander-dit-in-pro
 // ===== MIDDLEWARE =====
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use('/uploads', express.static(uploadDir));
 app.use(express.static(path.join(__dirname, 'public'), {
   setHeaders(res, filePath) {
     if (filePath.endsWith('index.html')) {
@@ -197,10 +198,42 @@ app.post('/api/reset-password', (req, res) => {
   res.json({ ok: true });
 });
 
+// ===== PROFIEL (monteur zelf) =====
+app.put('/api/profile', authMiddleware, upload.single('photo'), (req, res) => {
+  const users = readJSON('users.json');
+  const idx = users.findIndex(u => u.id === req.user.id);
+  if (idx === -1) return res.status(404).json({ error: 'Gebruiker niet gevonden' });
+  const { skills, age, title, bio } = req.body;
+  users[idx] = {
+    ...users[idx],
+    ...(skills !== undefined && { skills }),
+    ...(age !== undefined && { age }),
+    ...(title !== undefined && { title }),
+    ...(bio !== undefined && { bio }),
+    ...(req.file && { photoUrl: `/uploads/${req.file.filename}` })
+  };
+  writeJSON('users.json', users);
+  const { password: _, ...safeUser } = users[idx];
+  res.json(safeUser);
+});
+
 // ===== ADMIN - USERS =====
 app.get('/api/admin/users', authMiddleware, adminOnly, (req, res) => {
+  // Admin ziet alles behalve het gehashte wachtwoord
   const users = readJSON('users.json').map(u => { const { password, ...rest } = u; return rest; });
   res.json(users);
+});
+
+// Admin reset wachtwoord van een monteur
+app.post('/api/admin/users/:id/reset-password', authMiddleware, adminOnly, (req, res) => {
+  const { password } = req.body;
+  if (!password || password.length < 6) return res.status(400).json({ error: 'Wachtwoord minimaal 6 tekens' });
+  const users = readJSON('users.json');
+  const idx = users.findIndex(u => u.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: 'Gebruiker niet gevonden' });
+  users[idx].password = bcrypt.hashSync(password, 10);
+  writeJSON('users.json', users);
+  res.json({ ok: true });
 });
 
 app.post('/api/admin/users', authMiddleware, adminOnly, (req, res) => {
