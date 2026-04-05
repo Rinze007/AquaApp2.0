@@ -1428,6 +1428,7 @@ function bindAdminForms() {
       name: form.name || '',
       email: form.email || '',
       fields: JSON.parse(JSON.stringify(form.fields || [])),
+      conditions: JSON.parse(JSON.stringify(form.conditions || [])),
       allowedUsers: S.users.filter(u => u.allowedForms?.includes(form.id)).map(u => u.id)
     };
     render();
@@ -1961,9 +1962,9 @@ async function saveForm() {
   try {
     let savedForm;
     if (S.editingForm === 'new') {
-      savedForm = await api('POST', '/api/admin/forms', { name: bs.name, email: bs.email, fields: bs.fields });
+      savedForm = await api('POST', '/api/admin/forms', { name: bs.name, email: bs.email, fields: bs.fields, conditions: bs.conditions || [] });
     } else {
-      savedForm = await api('PUT', `/api/admin/forms/${S.editingForm}`, { name: bs.name, email: bs.email, fields: bs.fields });
+      savedForm = await api('PUT', `/api/admin/forms/${S.editingForm}`, { name: bs.name, email: bs.email, fields: bs.fields, conditions: bs.conditions || [] });
     }
 
     // Update allowed users
