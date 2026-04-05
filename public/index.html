@@ -1729,8 +1729,8 @@ function render() {
   if (S.view === 'register') { app.innerHTML = renderRegister(); bindRegister(); return; }
   if (S.view === 'forgot') { app.innerHTML = renderForgot(); bindForgot(); return; }
   if (S.view === 'reset') { app.innerHTML = renderReset(); bindReset(); return; }
-  if (S.view === 'admin') { app.innerHTML = renderAdmin(); bindAdmin(); return; }
-  if (S.view === 'monteur') { app.innerHTML = renderMonteur(); bindMonteur(); return; }
+  if (S.view === 'admin') { app.innerHTML = renderAdmin(); if (S.editingForm !== null) bindFormBuilder(); else bindAdmin(); return; }
+  if (S.view === 'monteur') { app.innerHTML = renderMonteur(); if (S.fillingForm) bindMonteur2(); else bindMonteur(); return; }
   if (S.view === 'submitted') { app.innerHTML = renderSubmittedScreen(); bindSubmittedScreen(); return; }
 }
 
@@ -4364,12 +4364,8 @@ function esc(str) {
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
 }
 
-// Override render to auto-bind
-const _render = render;
-window.render = function() {
-  _render();
-  bindAfterRender();
-};
+// render is already fully self-contained (render + bind per view)
+window.render = render;
 
 // ===================================================
 // INIT
