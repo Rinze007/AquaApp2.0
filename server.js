@@ -256,6 +256,14 @@ app.post('/api/reset-password', (req, res) => {
 });
 
 // ===== PROFIEL (monteur zelf) =====
+app.get('/api/profile', authMiddleware, (req, res) => {
+  const users = readJSON('users.json');
+  const user = users.find(u => u.id === req.user.id);
+  if (!user) return res.status(404).json({ error: 'Gebruiker niet gevonden' });
+  const { password: _, ...safeUser } = user;
+  res.json(safeUser);
+});
+
 app.put('/api/profile', authMiddleware, upload.single('photo'), (req, res) => {
   const users = readJSON('users.json');
   const idx = users.findIndex(u => u.id === req.user.id);
@@ -567,7 +575,7 @@ app.post('/api/submit/:formId', authMiddleware, upload.fields([{ name: 'photos',
     // Inzending opslaan — foto's bewaren zodat admin ze kan bekijken
     const photoUrls = photos.map(p => `/uploads/${path.basename(p.path)}`);
     const submissions = readJSON('submissions.json');
-    submissions.push({
+    const newSubmission = {
       id: uuidv4(),
       formId: form.id,
       formName: form.name,
@@ -579,10 +587,11 @@ app.post('/api/submit/:formId', authMiddleware, upload.fields([{ name: 'photos',
       hasSignature: !!signature,
       status: 'nieuw',
       submittedAt: new Date().toISOString()
-    });
+    };
+    submissions.push(newSubmission);
     writeJSON('submissions.json', submissions);
 
-    res.json({ success: true, message: 'Formulier succesvol verzonden!' });
+    res.json(newSubmission);
   } catch (err) {
     photoPaths.forEach(p => { if (fs.existsSync(p)) fs.unlinkSync(p); });
     console.error('Submit error:', err);

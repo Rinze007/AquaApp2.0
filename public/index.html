@@ -3426,12 +3426,14 @@ function bindModal() {
 // MONTEUR
 // ===================================================
 async function loadMonteurData() {
-  const [forms, submissions] = await Promise.all([
+  const [forms, submissions, profile] = await Promise.all([
     api('GET', '/api/forms'),
-    api('GET', '/api/submissions')
+    api('GET', '/api/submissions'),
+    api('GET', '/api/profile')
   ]);
   S.myForms = forms;
   S.mySubmissions = submissions.sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
+  S.myProfile = profile;
 }
 
 const TILE_GRADIENTS = [
@@ -4174,6 +4176,10 @@ async function submitForm() {
     const result = await api('POST', `/api/submit/${form.id}`, fd, true);
     clearDraft(form.id);
     S.loading = false;
+    // Voeg de nieuwe inzending direct toe aan de lokale lijst zodat history meteen klopt
+    if (result && result.id) {
+      S.mySubmissions = [result, ...(S.mySubmissions || [])];
+    }
     S.view = 'submitted';
     S.lastSubmission = { formName: form.name, values: { ...S.formValues }, fields: form.fields || [] };
     S.fillingForm = null;
