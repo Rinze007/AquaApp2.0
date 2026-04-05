@@ -128,7 +128,7 @@ app.post('/api/login', (req, res) => {
 app.get('/api/me', authMiddleware, (req, res) => res.json(req.user));
 
 // ===== REGISTRATIE =====
-app.post('/api/register', (req, res) => {
+app.post('/api/register', async (req, res) => {
   const { name, email, regio, password } = req.body;
   if (!name || !email || !regio || !password) return res.status(400).json({ error: 'Vul alle velden in' });
   if (password.length < 6) return res.status(400).json({ error: 'Wachtwoord moet minimaal 6 tekens zijn' });
