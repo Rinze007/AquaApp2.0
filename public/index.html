@@ -1666,6 +1666,410 @@ tr:hover td { background: rgba(248,251,254,0.95); }
     padding-right: max(8px, env(safe-area-inset-right));
   }
 }
+
+/* ===== OFFLINE BANNER ===== */
+.offline-banner {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  background: linear-gradient(90deg, #7C3AED, #6D28D9);
+  color: white;
+  text-align: center;
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 700;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 16px rgba(109,40,217,0.4);
+  animation: slideInUp 0.4s var(--ease-spring) both;
+}
+.offline-banner.restored {
+  background: linear-gradient(90deg, #059669, #10B981);
+  animation: fadeIn 0.3s ease both;
+}
+
+/* ===== ADMIN HERO ===== */
+.admin-hero {
+  background: var(--gradient-brand);
+  background-size: 200% 200%;
+  animation: gradientShift 10s ease-in-out infinite;
+  border-radius: var(--radius-xl);
+  padding: 28px 32px 24px;
+  margin-bottom: 24px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-xl);
+}
+.admin-hero::before {
+  content: '';
+  position: absolute;
+  top: -40%; right: -10%;
+  width: 55%; padding-top: 55%;
+  background: radial-gradient(circle, rgba(255,255,255,0.12) 0%, transparent 65%);
+  pointer-events: none;
+}
+.admin-hero::after {
+  content: '';
+  position: absolute;
+  bottom: -30%; left: -5%;
+  width: 40%; padding-top: 40%;
+  background: radial-gradient(circle, rgba(255,255,255,0.07) 0%, transparent 65%);
+  pointer-events: none;
+}
+.admin-hero-title {
+  font-size: 26px;
+  font-weight: 900;
+  color: white;
+  letter-spacing: -0.5px;
+  margin-bottom: 4px;
+  position: relative;
+}
+.admin-hero-sub {
+  font-size: 14px;
+  color: rgba(255,255,255,0.75);
+  position: relative;
+  margin-bottom: 20px;
+}
+.admin-hero-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  position: relative;
+}
+.admin-hero-btn {
+  background: rgba(255,255,255,0.18);
+  border: 1.5px solid rgba(255,255,255,0.28);
+  color: white;
+  border-radius: 14px;
+  padding: 10px 18px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s var(--ease-spring);
+  backdrop-filter: blur(8px);
+}
+.admin-hero-btn:hover {
+  background: rgba(255,255,255,0.28);
+  transform: translateY(-2px);
+}
+.admin-hero-btn.primary {
+  background: rgba(255,255,255,0.95);
+  color: var(--blue-dark);
+  border-color: transparent;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+}
+.admin-hero-btn.primary:hover {
+  background: white;
+  box-shadow: 0 10px 28px rgba(0,0,0,0.24);
+}
+.admin-hero-emoji {
+  position: absolute;
+  right: 28px; top: 50%;
+  transform: translateY(-50%);
+  font-size: 60px;
+  opacity: 0.85;
+  animation: floatBob 4s ease-in-out infinite;
+  filter: drop-shadow(0 8px 20px rgba(0,0,0,0.2));
+}
+
+/* ===== ADMIN FORM CARDS ===== */
+.form-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.form-card {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  box-shadow: var(--shadow-xs);
+  transition: transform 0.25s var(--ease-spring), box-shadow 0.25s var(--ease-smooth);
+  animation: fadeIn 0.4s var(--ease-out) both;
+}
+.form-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+[data-theme="dark"] .form-card {
+  background: rgba(22,32,46,0.88);
+  border-color: rgba(255,255,255,0.08);
+}
+.form-card-cover {
+  height: 72px;
+  display: flex;
+  align-items: center;
+  padding: 0 18px;
+  gap: 12px;
+  position: relative;
+  overflow: hidden;
+}
+.form-card-cover::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.16) 0%, transparent 60%);
+}
+.form-card-cover-icon {
+  font-size: 28px;
+  filter: drop-shadow(0 4px 10px rgba(0,0,0,0.25));
+  position: relative;
+  z-index: 1;
+}
+.form-card-cover-name {
+  font-size: 15px;
+  font-weight: 800;
+  color: white;
+  letter-spacing: -0.2px;
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.form-card-body {
+  padding: 14px 16px 16px;
+}
+.form-card-meta {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.form-card-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+/* ===== MONTEUR HISTORY CARDS ===== */
+.history-card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  padding: 16px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  transition: transform 0.2s var(--ease-spring), box-shadow 0.2s, background 0.15s;
+  animation: slideInUp 0.35s var(--ease-out) both;
+  box-shadow: var(--shadow-xs);
+}
+.history-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+  background: var(--surface-solid);
+}
+[data-theme="dark"] .history-card {
+  background: rgba(22,32,46,0.88);
+  border-color: rgba(255,255,255,0.08);
+}
+.history-card-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--blue-light), #D4E8FF);
+  color: var(--blue);
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.history-card-content {
+  flex: 1;
+  min-width: 0;
+}
+.history-card-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.history-card-meta {
+  font-size: 12px;
+  color: var(--text-muted);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.history-card-arrow {
+  color: var(--text-soft);
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+/* ===== REQUIRED FIELD HINT ===== */
+.required-hint {
+  background: #FEF3C7;
+  color: #92400E;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  animation: slideInUp 0.3s var(--ease-spring) both;
+}
+[data-theme="dark"] .required-hint {
+  background: rgba(245,158,11,0.15);
+  color: #FCD34D;
+}
+
+/* ===== ADMIN ACTIVITY FEED (improved) ===== */
+.activity-item-rich {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.15s;
+  border-radius: 10px;
+  padding: 10px 10px;
+  margin: 0 -10px;
+}
+.activity-item-rich:last-child { border-bottom: none; }
+.activity-item-rich:hover { background: rgba(0,87,184,0.05); }
+.activity-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  flex-shrink: 0;
+  font-weight: 700;
+  color: white;
+}
+.activity-content { flex: 1; min-width: 0; }
+.activity-name { font-size: 13px; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.activity-form { font-size: 12px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.activity-time-badge {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ===== STAT CARD SUBTITLE ===== */
+.stat-sub {
+  font-size: 11px;
+  color: rgba(255,255,255,0.55);
+  margin-top: 2px;
+  font-weight: 500;
+}
+
+/* ===== CHART BAR (CSS only) ===== */
+.chart-bar-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.chart-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.chart-bar-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  width: 100px;
+  flex-shrink: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.chart-bar-track {
+  flex: 1;
+  height: 28px;
+  background: var(--grey-light);
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+}
+.chart-bar-fill {
+  height: 100%;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  padding-left: 10px;
+  font-size: 11px;
+  font-weight: 800;
+  color: white;
+  transition: width 0.8s var(--ease-spring);
+  animation: progressFill 0.8s var(--ease-spring) both;
+}
+.chart-bar-count {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text);
+  width: 28px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* ===== SEARCH BAR ===== */
+.search-bar-wrap {
+  position: relative;
+  margin-bottom: 16px;
+}
+.search-bar {
+  width: 100%;
+  padding: 12px 14px 12px 42px;
+  border: 1.5px solid var(--border);
+  border-radius: 16px;
+  font-size: 14px;
+  background: var(--surface-solid);
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.search-bar:focus {
+  border-color: var(--blue);
+  box-shadow: var(--shadow-focus);
+}
+.search-bar-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 16px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+[data-theme="dark"] .search-bar {
+  background: rgba(255,255,255,0.06);
+  border-color: rgba(255,255,255,0.12);
+  color: var(--text);
+}
+
+@media (max-width: 760px) {
+  .form-card-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+  .admin-hero { padding: 20px 18px 18px; border-radius: 20px; }
+  .admin-hero-title { font-size: 20px; }
+  .admin-hero-emoji { font-size: 44px; right: 16px; top: 24px; transform: none; }
+  .admin-hero-actions { gap: 8px; }
+  .admin-hero-btn { padding: 9px 14px; font-size: 12px; }
+}
+@media (max-width: 420px) {
+  .form-card-grid { grid-template-columns: 1fr; }
+}
   </style>
 </head>
 <body>
@@ -1699,24 +2103,79 @@ let S = {
   dropdownOpen: null,
   listItems: {},
   showConditions: false,
-  subFilterStatus: ''
+  subFilterStatus: '',
+  subSearchQ: ''
 };
 
 // ===================================================
-// API
+// OFFLINE DETECTIE
 // ===================================================
-async function api(method, url, data = null, isForm = false) {
+let _wasOffline = false;
+
+function showOfflineBanner(offline) {
+  let banner = document.getElementById('offlineBanner');
+  if (offline) {
+    if (!banner) {
+      banner = document.createElement('div');
+      banner.id = 'offlineBanner';
+      banner.className = 'offline-banner';
+      banner.innerHTML = '📡 Geen internetverbinding — wijzigingen worden niet opgeslagen';
+      document.body.prepend(banner);
+    }
+    _wasOffline = true;
+  } else {
+    if (banner) {
+      if (_wasOffline) {
+        banner.className = 'offline-banner restored';
+        banner.innerHTML = '✅ Verbinding hersteld';
+        setTimeout(() => banner?.remove(), 2500);
+      } else {
+        banner.remove();
+      }
+    }
+    _wasOffline = false;
+  }
+}
+
+window.addEventListener('online',  () => showOfflineBanner(false));
+window.addEventListener('offline', () => showOfflineBanner(true));
+
+// ===================================================
+// API (met retry bij netwerk-timeout)
+// ===================================================
+async function api(method, url, data = null, isForm = false, _attempt = 0) {
+  if (!navigator.onLine) {
+    showOfflineBanner(true);
+    throw new Error('Geen internetverbinding. Controleer je netwerk.');
+  }
   const headers = {};
   if (S.token) headers['Authorization'] = `Bearer ${S.token}`;
   if (!isForm && data) headers['Content-Type'] = 'application/json';
-  const res = await fetch(url, {
-    method,
-    headers,
-    body: isForm ? data : (data ? JSON.stringify(data) : null)
-  });
-  const json = await res.json();
-  if (!res.ok) throw new Error(json.error || 'Er is een fout opgetreden');
-  return json;
+
+  // AbortController voor timeout (15s)
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 15000);
+
+  try {
+    const res = await fetch(url, {
+      method,
+      headers,
+      body: isForm ? data : (data ? JSON.stringify(data) : null),
+      signal: controller.signal
+    });
+    clearTimeout(timer);
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'Er is een fout opgetreden');
+    return json;
+  } catch(err) {
+    clearTimeout(timer);
+    // Retry bij timeout/netwerk-fout (max 2 pogingen, niet bij 4xx)
+    if (_attempt < 2 && (err.name === 'AbortError' || err.name === 'TypeError')) {
+      await new Promise(r => setTimeout(r, 1500 * (_attempt + 1)));
+      return api(method, url, data, isForm, _attempt + 1);
+    }
+    throw err;
+  }
 }
 
 // ===================================================
@@ -2104,160 +2563,212 @@ function renderAdminDashboard() {
   const todayCount = submissions.filter(s => new Date(s.submittedAt).toDateString() === todayStr).length;
   const weekAgo = new Date(now - 7 * 86400000);
   const weekCount = submissions.filter(s => new Date(s.submittedAt) >= weekAgo).length;
-  const recent = submissions.slice(0, 8);
+  const nieuweCount = submissions.filter(s => !s.status || s.status === 'nieuw').length;
+  const recent = submissions.slice(0, 6);
 
   const timeAgo = ts => {
     const diff = (Date.now() - new Date(ts)) / 1000;
     if (diff < 60) return 'zojuist';
-    if (diff < 3600) return Math.floor(diff/60) + 'm geleden';
-    if (diff < 86400) return Math.floor(diff/3600) + 'u geleden';
-    return Math.floor(diff/86400) + 'd geleden';
+    if (diff < 3600) return Math.floor(diff/60) + 'm';
+    if (diff < 86400) return Math.floor(diff/3600) + 'u';
+    return Math.floor(diff/86400) + 'd';
   };
 
-  const actColors = ['rgba(0,87,184,0.12)', 'rgba(16,185,129,0.12)', 'rgba(245,158,11,0.12)', 'rgba(244,63,94,0.12)', 'rgba(99,102,241,0.12)', 'rgba(6,182,212,0.12)'];
-  const actEmojis = ['📄', '✅', '📋', '📥', '🔔', '📝'];
+  const { text: greetText } = getGreeting();
+  const firstName = (S.user?.name || 'Beheerder').split(' ')[0];
+
+  // Per-formulier chart data (top 5)
+  const formCounts = {};
+  submissions.forEach(s => { formCounts[s.formId] = (formCounts[s.formId] || 0) + 1; });
+  const topForms = S.forms.map(f => ({ name: f.name, count: formCounts[f.id] || 0 }))
+    .sort((a,b) => b.count - a.count).slice(0,5);
+  const maxCount = Math.max(...topForms.map(f => f.count), 1);
+  const chartColors = ['linear-gradient(90deg,#0057B8,#2A7DE1)','linear-gradient(90deg,#4338CA,#7C3AED)','linear-gradient(90deg,#0891B2,#06B6D4)','linear-gradient(90deg,#059669,#10B981)','linear-gradient(90deg,#D97706,#F59E0B)'];
+
+  // Avatar kleuren op basis van naam
+  const avatarColor = name => {
+    const colors = ['#0057B8','#7C3AED','#0891B2','#059669','#D97706','#E11D48','#4338CA'];
+    let h = 0; for (let c of (name||'A')) h = c.charCodeAt(0) + ((h<<5)-h);
+    return colors[Math.abs(h) % colors.length];
+  };
+  const initials = name => (name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
 
   return `
   <div style="animation:fadeIn 0.4s var(--ease-out) both">
-    <div class="section-header" style="margin-bottom:20px">
-      <div>
-        <h2 class="section-title">Dashboard</h2>
-        <p style="font-size:13px;color:var(--text-muted);margin-top:2px">${now.toLocaleDateString('nl-NL',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</p>
+
+    <!-- HERO HEADER -->
+    <div class="admin-hero" style="margin-bottom:24px">
+      <div class="admin-hero-title">${greetText}, ${esc(firstName)}! 👋</div>
+      <div class="admin-hero-sub">${now.toLocaleDateString('nl-NL',{weekday:'long',day:'numeric',month:'long'})} · ${nieuweCount > 0 ? `<strong style="color:rgba(255,255,255,0.95)">${nieuweCount} nieuwe melding${nieuweCount!==1?'en':''}</strong> wachten op verwerking` : 'Alle meldingen zijn verwerkt ✓'}</div>
+      <div class="admin-hero-actions">
+        <button class="admin-hero-btn primary" onclick="S.adminTab='forms';S.editingForm='new';S.builderState={name:'',email:'',fields:[],allowedUsers:[]};render()">+ Nieuw formulier</button>
+        <button class="admin-hero-btn" onclick="S.adminTab='submissions';render()">📥 Inzendingen${nieuweCount>0?` (${nieuweCount})`:''}  </button>
+        <button class="admin-hero-btn" onclick="window.location='/api/admin/submissions/export'" style="font-size:12px">⬇ CSV export</button>
       </div>
-      <button class="btn btn-primary" onclick="S.adminTab='forms';render()">+ Nieuw formulier</button>
+      <div class="admin-hero-emoji">📊</div>
     </div>
 
-    <div class="stat-grid">
+    <!-- STAT CARDS -->
+    <div class="stat-grid" style="margin-bottom:24px">
       <div class="stat-card" style="background:linear-gradient(135deg,#0B2540,#0057B8);box-shadow:0 16px 44px rgba(0,87,184,0.35)">
         <span class="stat-card-icon">📋</span>
         <div class="stat-number">${S.forms.length}</div>
         <div class="stat-label">Formulieren</div>
+        <div class="stat-sub">${S.forms.length === 0 ? 'Geen formulieren' : 'Actief in gebruik'}</div>
         <span class="stat-trend">Totaal</span>
       </div>
       <div class="stat-card" style="background:linear-gradient(135deg,#4338CA,#7C3AED);box-shadow:0 16px 44px rgba(124,58,237,0.32);animation-delay:0.08s">
         <span class="stat-card-icon">👷</span>
         <div class="stat-number">${monteurs.length}</div>
         <div class="stat-label">Monteurs</div>
+        <div class="stat-sub">+ ${S.users.filter(u=>u.role==='admin').length} beheerder${S.users.filter(u=>u.role==='admin').length!==1?'s':''}</div>
         <span class="stat-trend">Geregistreerd</span>
       </div>
       <div class="stat-card" style="background:linear-gradient(135deg,#0891B2,#06B6D4);box-shadow:0 16px 44px rgba(6,182,212,0.32);animation-delay:0.14s">
         <span class="stat-card-icon">📥</span>
         <div class="stat-number">${submissions.length}</div>
         <div class="stat-label">Inzendingen</div>
+        <div class="stat-sub">${weekCount} deze week</div>
         <span class="stat-trend">Totaal</span>
       </div>
-      <div class="stat-card" style="background:linear-gradient(135deg,#059669,#10B981);box-shadow:0 16px 44px rgba(16,185,129,0.32);animation-delay:0.20s">
-        <span class="stat-card-icon">🔥</span>
-        <div class="stat-number">${todayCount}</div>
-        <div class="stat-label">Vandaag</div>
-        <span class="stat-trend">${weekCount} deze week</span>
+      <div class="stat-card" style="background:${nieuweCount>0?'linear-gradient(135deg,#E11D48,#F43F5E)':'linear-gradient(135deg,#059669,#10B981)'};box-shadow:0 16px 44px rgba(${nieuweCount>0?'244,63,94':'16,185,129'},0.35);animation-delay:0.20s">
+        <span class="stat-card-icon">${nieuweCount>0?'🔔':'✅'}</span>
+        <div class="stat-number">${nieuweCount > 0 ? nieuweCount : todayCount}</div>
+        <div class="stat-label">${nieuweCount > 0 ? 'Onverwerkt' : 'Vandaag'}</div>
+        <div class="stat-sub">${nieuweCount > 0 ? 'Te verwerken' : 'Inzendingen vandaag'}</div>
+        <span class="stat-trend">${nieuweCount>0?'Actie vereist':'Up to date'}</span>
       </div>
     </div>
 
-    <div class="dashboard-2col" style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
-      <div class="card" style="padding:20px 20px 8px">
-        <div class="card-header" style="margin-bottom:12px">
-          <span class="card-title">Recente inzendingen</span>
-          <button class="btn btn-ghost btn-sm" onclick="S.adminTab='submissions';render()">Alles →</button>
+    <!-- 2 KOLOM INHOUD -->
+    <div class="dashboard-2col" style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px">
+
+      <!-- RECENTE ACTIVITEIT -->
+      <div class="card" style="padding:20px">
+        <div class="card-header" style="margin-bottom:16px">
+          <span class="card-title">Recente activiteit</span>
+          <button class="btn btn-ghost btn-sm" onclick="S.adminTab='submissions';render()">Alle →</button>
         </div>
-        ${recent.length === 0 ? `<div class="empty" style="padding:28px 0"><div class="empty-icon">📭</div><p class="empty-text" style="font-size:14px">Nog geen inzendingen</p></div>` : `
-        <div class="activity-feed">
+        ${recent.length === 0 ? `
+        <div class="empty" style="padding:28px 0">
+          <div class="empty-icon">📭</div>
+          <p class="empty-text" style="font-size:14px">Nog geen inzendingen</p>
+          <p class="empty-sub">Inzendingen van monteurs verschijnen hier.</p>
+        </div>` : `
+        <div>
           ${recent.map((s,i) => {
             const monteur = S.users.find(u => u.id === s.userId);
-            return `<div class="activity-item" style="animation-delay:${i*0.05}s">
-              <div class="activity-dot" style="background:${actColors[i%actColors.length]}">${actEmojis[i%actEmojis.length]}</div>
-              <div class="activity-text">
-                <strong style="font-weight:700">${esc(monteur?.name || s.userName || '—')}</strong>
-                <span style="color:var(--text-muted)"> — ${esc(s.formName || '—')}</span>
+            const name = monteur?.name || s.userName || '—';
+            const bgCol = avatarColor(name);
+            return `<div class="activity-item-rich" onclick="openSubDetail('${s.id}')" style="animation-delay:${i*0.05}s">
+              <div class="activity-avatar" style="background:${bgCol}">${initials(name)}</div>
+              <div class="activity-content">
+                <div class="activity-name">${esc(name)}</div>
+                <div class="activity-form">${esc(s.formName || '—')}</div>
               </div>
-              <div class="activity-time">${timeAgo(s.submittedAt)}</div>
+              <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px">
+                <div class="activity-time-badge">${timeAgo(s.submittedAt)}</div>
+                ${statusBadge(s.status)}
+              </div>
             </div>`;
           }).join('')}
         </div>`}
       </div>
 
+      <!-- PER-FORMULIER CHART -->
       <div class="card" style="padding:20px">
         <div class="card-header" style="margin-bottom:16px">
-          <span class="card-title">Snelle acties</span>
+          <span class="card-title">Gebruik per formulier</span>
         </div>
-        <div class="quick-actions" style="grid-template-columns:1fr;gap:8px">
-          <div class="quick-action-card" onclick="S.adminTab='forms';S.editingForm='new';S.builderState={name:'',email:'',fields:[],allowedUsers:[]};render()">
-            <div class="quick-action-icon" style="background:linear-gradient(135deg,#EAF3FF,#C7DFFA);color:var(--blue)">📋</div>
-            <div>
-              <div class="quick-action-label">Nieuw formulier</div>
-              <div style="font-size:11px;color:var(--text-muted)">Formulier aanmaken met de builder</div>
+        ${topForms.length === 0 || topForms.every(f=>f.count===0) ? `
+        <div class="empty" style="padding:28px 0">
+          <div class="empty-icon">📊</div>
+          <p class="empty-text" style="font-size:14px">Nog geen data</p>
+        </div>` : `
+        <div class="chart-bar-wrap">
+          ${topForms.map((f,i) => `
+          <div class="chart-bar-row">
+            <div class="chart-bar-label" title="${esc(f.name)}">${esc(f.name)}</div>
+            <div class="chart-bar-track">
+              <div class="chart-bar-fill" style="width:${Math.max(f.count/maxCount*100,4)}%;background:${chartColors[i%chartColors.length]};animation-delay:${i*0.1}s">
+                ${f.count > 0 ? '' : ''}
+              </div>
             </div>
-          </div>
-          <div class="quick-action-card" onclick="S.adminTab='users';render()">
-            <div class="quick-action-icon" style="background:linear-gradient(135deg,#EDE9FE,#DDD6FE);color:#7C3AED">👥</div>
-            <div>
-              <div class="quick-action-label">Gebruikers & rechten</div>
-              <div style="font-size:11px;color:var(--text-muted)">${S.users.length} gebruiker${S.users.length!==1?'s':''} beheren</div>
-            </div>
-          </div>
-          <div class="quick-action-card" onclick="S.adminTab='submissions';render()">
-            <div class="quick-action-icon" style="background:linear-gradient(135deg,#CFFAFE,#A5F3FC);color:#0891B2">📥</div>
-            <div>
-              <div class="quick-action-label">Inzendingen bekijken</div>
-              <div style="font-size:11px;color:var(--text-muted)">${submissions.length} inzending${submissions.length!==1?'en':''} in totaal</div>
-            </div>
-          </div>
-        </div>
+            <div class="chart-bar-count">${f.count}</div>
+          </div>`).join('')}
+        </div>`}
       </div>
+
     </div>
   </div>`;
 }
 
 function bindAdminDashboard() {
-  // Quick action cards are handled via onclick for simplicity
+  // Klikken op activiteit-rijen openen submissie detail
+  // openSubDetail() is al beschikbaar
 }
 
 // --- ADMIN FORMS ---
 function renderAdminForms() {
+  const FORM_GRADS = [
+    'linear-gradient(135deg,#0B2540,#0057B8)',
+    'linear-gradient(135deg,#4338CA,#7C3AED)',
+    'linear-gradient(135deg,#0891B2,#06B6D4)',
+    'linear-gradient(135deg,#059669,#10B981)',
+    'linear-gradient(135deg,#D97706,#F59E0B)',
+    'linear-gradient(135deg,#E11D48,#F43F5E)',
+    'linear-gradient(135deg,#7C3AED,#EC4899)',
+    'linear-gradient(135deg,#0E7490,#22D3EE)',
+  ];
+  const FORM_ICONS = ['📋','📝','🔧','⚙️','🏗️','🔩','📐','🛠️','📊','🔍'];
+
   return `
-  <div class="section-header">
-    <h2 class="section-title">Formulieren</h2>
+  <div class="section-header" style="margin-bottom:20px">
+    <h2 class="section-title">Formulieren <span style="font-size:14px;font-weight:400;color:var(--text-muted)">${S.forms.length} actief</span></h2>
     <button class="btn btn-primary" id="newFormBtn">+ Nieuw formulier</button>
   </div>
   ${S.forms.length === 0 ? `
-    <div class="empty">
-      <div class="empty-icon">📋</div>
-      <p class="empty-text">Nog geen formulieren</p>
-      <p class="empty-sub">Maak je eerste formulier aan met de knop hierboven.</p>
+    <div class="card" style="text-align:center;padding:64px 24px">
+      <div style="font-size:64px;margin-bottom:16px;animation:floatBob 3s ease-in-out infinite">📋</div>
+      <p class="empty-text" style="font-size:20px;margin-bottom:8px">Geen formulieren</p>
+      <p class="empty-sub" style="margin-bottom:20px">Maak je eerste formulier aan met de builder.</p>
+      <button class="btn btn-primary" id="newFormBtn2">+ Eerste formulier aanmaken</button>
     </div>` : `
-  <div class="card" style="padding:0;overflow:hidden">
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>Naam</th><th>Velden</th><th>E-mail</th><th>Monteurs</th><th></th></tr></thead>
-        <tbody>
-        ${S.forms.map(f => {
-          const assignedCount = S.users.filter(u => u.allowedForms?.includes(f.id)).length;
-          return `<tr>
-            <td><strong>${esc(f.name)}</strong></td>
-            <td><span class="badge badge-blue">${(f.fields||[]).length} velden</span></td>
-            <td class="text-sm text-muted">${esc(f.email || '—')}</td>
-            <td><span class="badge badge-grey">${assignedCount} monteur${assignedCount!==1?'s':''}</span></td>
-            <td>
-              <div class="flex gap-1">
-                <button class="btn btn-ghost btn-sm edit-form-btn" data-id="${f.id}">✏️ Bewerk</button>
-                <button class="btn btn-ghost btn-sm dup-form-btn" data-id="${f.id}" title="Dupliceren">⧉</button>
-                <button class="btn btn-danger btn-sm del-form-btn" data-id="${f.id}" data-name="${esc(f.name)}">🗑</button>
-              </div>
-            </td>
-          </tr>`;
-        }).join('')}
-        </tbody>
-      </table>
-    </div>
+  <div class="form-card-grid">
+    ${S.forms.map((f, fi) => {
+      const assignedCount = S.users.filter(u => u.allowedForms?.includes(f.id)).length;
+      const fieldCount = (f.fields||[]).length;
+      const grad = FORM_GRADS[fi % FORM_GRADS.length];
+      const icon = FORM_ICONS[fi % FORM_ICONS.length];
+      const subsCount = (S.allSubmissions||[]).filter(s=>s.formId===f.id).length;
+      return `
+      <div class="form-card" style="animation-delay:${fi*0.06}s">
+        <div class="form-card-cover" style="background:${grad}">
+          <div class="form-card-cover-icon">${icon}</div>
+          <div class="form-card-cover-name">${esc(f.name)}</div>
+        </div>
+        <div class="form-card-body">
+          <div class="form-card-meta">
+            <span class="badge badge-blue">📝 ${fieldCount} veld${fieldCount!==1?'en':''}</span>
+            <span class="badge badge-grey">👷 ${assignedCount} monteur${assignedCount!==1?'s':''}</span>
+            <span class="badge" style="background:#EEF2FF;color:#4338CA">📥 ${subsCount}</span>
+          </div>
+          ${f.email ? `<div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">✉ ${esc(f.email)}</div>` : ''}
+          <div class="form-card-actions">
+            <button class="btn btn-primary btn-sm edit-form-btn" data-id="${f.id}" style="flex:1">✏️ Bewerk</button>
+            <button class="btn btn-ghost btn-sm dup-form-btn" data-id="${f.id}" title="Dupliceren" style="padding:7px 10px">⧉</button>
+            <button class="btn btn-danger btn-sm del-form-btn" data-id="${f.id}" data-name="${esc(f.name)}" style="padding:7px 10px">🗑</button>
+          </div>
+        </div>
+      </div>`;
+    }).join('')}
   </div>`}`;
 }
 
 function bindAdminForms() {
-  document.getElementById('newFormBtn')?.addEventListener('click', () => {
-    S.editingForm = 'new';
-    S.builderState = { name: '', email: '', fields: [], allowedUsers: [] };
-    render();
-  });
+  const openBuilder = () => { S.editingForm = 'new'; S.builderState = { name: '', email: '', fields: [], allowedUsers: [] }; render(); };
+  document.getElementById('newFormBtn')?.addEventListener('click', openBuilder);
+  document.getElementById('newFormBtn2')?.addEventListener('click', openBuilder);
   document.querySelectorAll('.edit-form-btn').forEach(b => b.addEventListener('click', () => {
     const form = S.forms.find(f => f.id === b.dataset.id);
     if (!form) return;
@@ -2859,24 +3370,34 @@ function renderAdminSubmissions() {
   const users = S.users.filter(u => u.role !== 'admin');
   const nieuweCount = subs.filter(s => !s.status || s.status === 'nieuw').length;
 
+  const searchQ = (S.subSearchQ || '').toLowerCase();
   const filtered = subs.filter(s => {
     if (filterForm   && s.formId  !== filterForm)   return false;
     if (filterUser   && s.userId  !== filterUser)   return false;
     if (filterStatus && (s.status || 'nieuw') !== filterStatus) return false;
+    if (searchQ) {
+      const monteur = users.find(u => u.id === s.userId);
+      const haystack = [s.formName, monteur?.name, s.userName, ...Object.values(s.data||{})].join(' ').toLowerCase();
+      if (!haystack.includes(searchQ)) return false;
+    }
     return true;
   });
 
-  const hasFilter = filterForm || filterUser || filterStatus;
+  const hasFilter = filterForm || filterUser || filterStatus || searchQ;
 
   return `
   <div class="section-header">
     <div>
       <h2 class="section-title">Inzendingen <span style="font-size:13px;font-weight:400;color:var(--text-muted)">${filtered.length} van ${subs.length}</span></h2>
-      ${nieuweCount > 0 ? `<span style="font-size:12px;color:var(--blue);font-weight:700;margin-top:3px;display:inline-block">${nieuweCount} niet verwerkt</span>` : ''}
+      ${nieuweCount > 0 ? `<span style="font-size:12px;color:var(--rose);font-weight:700;margin-top:3px;display:inline-block">🔴 ${nieuweCount} onverwerkt</span>` : ''}
     </div>
     <a href="/api/admin/submissions/export" class="btn btn-ghost btn-sm" style="display:flex;align-items:center;gap:6px" title="Download als CSV">
-      ⬇ CSV exporteren
+      ⬇ CSV export
     </a>
+  </div>
+  <div class="search-bar-wrap">
+    <span class="search-bar-icon">🔍</span>
+    <input class="search-bar" id="subSearch" type="text" placeholder="Zoek op naam, formulier, antwoord..." value="${esc(S.subSearchQ||'')}">
   </div>
   <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center">
     <select class="form-control" id="subFilterForm" style="max-width:200px;padding:8px 12px;font-size:13px">
@@ -3153,7 +3674,13 @@ function bindAdminSubmissions() {
     S.subFilterStatus = e.target.value; render();
   });
   document.getElementById('clearSubFilter')?.addEventListener('click', () => {
-    S.subFilterForm = ''; S.subFilterUser = ''; S.subFilterStatus = ''; render();
+    S.subFilterForm = ''; S.subFilterUser = ''; S.subFilterStatus = ''; S.subSearchQ = ''; render();
+  });
+  // Live zoeken (debounced)
+  let _subSearchTimer;
+  document.getElementById('subSearch')?.addEventListener('input', e => {
+    clearTimeout(_subSearchTimer);
+    _subSearchTimer = setTimeout(() => { S.subSearchQ = e.target.value; render(); }, 250);
   });
   document.querySelectorAll('.admin-sub-detail-btn').forEach(b => b.addEventListener('click', e => {
     e.stopPropagation();
@@ -3534,27 +4061,31 @@ function renderMonteur() {
           <div style="font-size:56px;margin-bottom:14px;animation:floatBob 3s ease-in-out infinite">📭</div>
           <p class="empty-text" style="font-size:18px;margin-bottom:6px">Nog geen inzendingen</p>
           <p class="empty-sub">Ingevulde formulieren verschijnen hier.</p>
+          <button class="btn btn-primary" style="margin-top:16px" onclick="S.monteurTab='forms';render()">Formulier invullen</button>
         </div>` : `
-      <div class="card" style="padding:0;overflow:hidden">
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Formulier</th><th>Datum</th><th>Tijd</th><th>Foto's</th><th>Handtekening</th></tr></thead>
-            <tbody>
-              ${S.mySubmissions.map(s => {
-                const d = new Date(s.submittedAt);
-                const datum = d.toLocaleDateString('nl-NL', { day:'2-digit', month:'2-digit', year:'numeric' });
-                const tijd = d.toLocaleTimeString('nl-NL', { hour:'2-digit', minute:'2-digit' });
-                return `<tr class="submission-row" data-sid="${s.id}" style="cursor:pointer">
-                  <td><strong>${esc(s.formName)}</strong></td>
-                  <td class="text-sm">${datum}</td>
-                  <td class="text-sm text-muted">${tijd}</td>
-                  <td>${s.photoCount > 0 ? `<span class="badge badge-blue">📷 ${s.photoCount}</span>` : '<span class="text-muted text-sm">—</span>'}</td>
-                  <td>${s.hasSignature ? '<span class="badge badge-blue">✓</span>' : '<span class="text-muted text-sm">—</span>'}</td>
-                </tr>`;
-              }).join('')}
-            </tbody>
-          </table>
-        </div>
+      <div>
+        ${S.mySubmissions.map((s, i) => {
+          const d = new Date(s.submittedAt);
+          const datum = d.toLocaleDateString('nl-NL', { day:'2-digit', month:'2-digit', year:'numeric' });
+          const tijd = d.toLocaleTimeString('nl-NL', { hour:'2-digit', minute:'2-digit' });
+          const badges = [];
+          if (s.photoCount > 0) badges.push(`📷 ${s.photoCount}`);
+          if (s.hasSignature) badges.push('✍ Handtekening');
+          return `
+          <div class="history-card submission-row" data-sid="${s.id}" style="animation-delay:${i*0.04}s">
+            <div class="history-card-icon">📋</div>
+            <div class="history-card-content">
+              <div class="history-card-name">${esc(s.formName)}</div>
+              <div class="history-card-meta">
+                <span>${datum}</span>
+                <span style="opacity:0.5">·</span>
+                <span>${tijd}</span>
+                ${badges.map(b => `<span style="opacity:0.5">·</span><span>${b}</span>`).join('')}
+              </div>
+            </div>
+            <div class="history-card-arrow">›</div>
+          </div>`;
+        }).join('')}
       </div>`}
     ` : ''}
 
@@ -3828,6 +4359,8 @@ function renderFormFill() {
   </div>
 
   <div class="submit-wrap">
+    ${!currentHasValue && currentField?.required && !isLast ? `
+    <div class="required-hint">⚠ Dit veld is verplicht — vul het in om verder te gaan.</div>` : ''}
     <div class="flex gap-2">
       ${idx > 0 ? `<button class="btn btn-ghost" id="prevFieldBtn" style="min-width:80px">← Terug</button>` : ''}
       ${!isLast ? `
@@ -4106,6 +4639,40 @@ function bindMonteur2() {
 
   // Submit
   document.getElementById('submitFormBtn')?.addEventListener('click', submitForm);
+
+  // Keyboard navigatie: pijltjestoetsen
+  document.addEventListener('keydown', _formKeyHandler);
+
+  // Touch swipe navigatie (links/rechts)
+  setupFormSwipe();
+}
+
+function _formKeyHandler(e) {
+  if (!S.fillingForm || S.view !== 'monteur') { document.removeEventListener('keydown', _formKeyHandler); return; }
+  if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') return;
+  if (e.key === 'ArrowRight' || e.key === 'Enter') document.getElementById('nextFieldBtn')?.click();
+  if (e.key === 'ArrowLeft') document.getElementById('prevFieldBtn')?.click();
+}
+
+function setupFormSwipe() {
+  const body = document.querySelector('.form-fill-body');
+  if (!body) return;
+  let startX = 0, startY = 0;
+  body.addEventListener('touchstart', e => {
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+  }, { passive: true });
+  body.addEventListener('touchend', e => {
+    if (!S.fillingForm) return;
+    const dx = e.changedTouches[0].clientX - startX;
+    const dy = e.changedTouches[0].clientY - startY;
+    if (Math.abs(dx) < 50 || Math.abs(dy) > Math.abs(dx)) return; // geen echte horizontale swipe
+    if (dx < -50) { // swipe links = volgende
+      document.getElementById('nextFieldBtn')?.click();
+    } else if (dx > 50) { // swipe rechts = vorige
+      document.getElementById('prevFieldBtn')?.click();
+    }
+  }, { passive: true });
 }
 
 function setupSignaturePad(canvas) {
