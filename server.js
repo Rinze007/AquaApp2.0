@@ -451,7 +451,11 @@ app.post('/api/submit/:formId', authMiddleware, upload.fields([{ name: 'photos',
     photos.forEach(p => photoPaths.push(p.path));
 
     if (process.env.RESEND_API_KEY && form.email) {
-      await sendEmail(form, formData, photos, signature, req.user);
+      try {
+        await sendEmail(form, formData, photos, signature, req.user);
+      } catch (emailErr) {
+        console.error('E-mail verzenden mislukt (inzending wél opgeslagen):', emailErr.message);
+      }
     }
 
     // Inzending opslaan
