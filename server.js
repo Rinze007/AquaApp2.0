@@ -436,7 +436,9 @@ app.post('/api/submit/:formId', authMiddleware, upload.fields([{ name: 'photos',
     const photos = req.files?.photos || [];
     photos.forEach(p => photoPaths.push(p.path));
 
-    await sendEmail(form, formData, photos, signature, req.user);
+    if (process.env.RESEND_API_KEY && form.email) {
+      await sendEmail(form, formData, photos, signature, req.user);
+    }
 
     // Inzending opslaan
     const submissions = readJSON('submissions.json');
@@ -464,9 +466,8 @@ app.post('/api/submit/:formId', authMiddleware, upload.fields([{ name: 'photos',
 
 // ===== EMAIL VERZENDING =====
 async function sendEmail(form, formData, photos, signature, user) {
-  if (!process.env.RESEND_API_KEY) {
-    throw new Error('RESEND_API_KEY niet geconfigureerd.');
-  }
+  if (!process.env.RESEND_API_KEY) return;
+  if (!form.email) return;
 
   const resend = new Resend(process.env.RESEND_API_KEY);
 
