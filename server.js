@@ -14,6 +14,15 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'aquaapp-geheim-verander-dit-in-productie';
 
+// ===== SECURITY HEADERS =====
+app.use((req, res, next) => {
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  next();
+});
+
 // ===== MIDDLEWARE =====
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
@@ -46,8 +55,13 @@ function readJSON(file) {
   try { return JSON.parse(fs.readFileSync(path.join(dataDir, file), 'utf8')); }
   catch { return []; }
 }
+
+// Atomic write: schrijf naar .tmp dan rename → geen corruptie bij crash
 function writeJSON(file, data) {
-  fs.writeFileSync(path.join(dataDir, file), JSON.stringify(data, null, 2));
+  const fullPath = path.join(dataDir, file);
+  const tmp = fullPath + '.tmp';
+  fs.writeFileSync(tmp, JSON.stringify(data, null, 2));
+  fs.renameSync(tmp, fullPath);
 }
 
 // ===== INIT DATA =====
@@ -92,6 +106,27 @@ if (!fs.existsSync(path.join(dataDir, 'forms.json'))) {
 }
 if (!fs.existsSync(path.join(dataDir, 'lists.json'))) writeJSON('lists.json', []);
 
+// ===== RATE LIMITING (login) =====
+const loginAttempts = new Map();
+function checkRateLimit(ip) {
+  const now = Date.now();
+  if (!loginAttempts.has(ip)) loginAttempts.set(ip, []);
+  const attempts = loginAttempts.get(ip).filter(t => now - t < 60000); // sliding 60s window
+  loginAttempts.set(ip, attempts);
+  if (attempts.length >= 10) return false; // max 10 pogingen per minuut
+  attempts.push(now);
+  return true;
+}
+// Opruimen van oude rate-limit entries om memory leaks te voorkomen
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, times] of loginAttempts.entries()) {
+    const fresh = times.filter(t => now - t < 60000);
+    if (fresh.length === 0) loginAttempts.delete(ip);
+    else loginAttempts.set(ip, fresh);
+  }
+}, 5 * 60 * 1000);
+
 // ===== AUTH MIDDLEWARE =====
 function authMiddleware(req, res, next) {
   const token = req.headers.authorization?.split(' ')[1];
@@ -110,6 +145,10 @@ function adminOnly(req, res, next) {
 
 // ===== AUTH ROUTES =====
 app.post('/api/login', (req, res) => {
+  const ip = req.ip || req.socket?.remoteAddress || 'unknown';
+  if (!checkRateLimit(ip)) {
+    return res.status(429).json({ error: 'Te veel inlogpogingen. Probeer het over een minuut opnieuw.' });
+  }
   const { username, password } = req.body;
   if (!username || !password) return res.status(400).json({ error: 'Vul gebruikersnaam en wachtwoord in' });
   const users = readJSON('users.json');
@@ -237,7 +276,6 @@ app.put('/api/profile', authMiddleware, upload.single('photo'), (req, res) => {
 
 // ===== ADMIN - USERS =====
 app.get('/api/admin/users', authMiddleware, adminOnly, (req, res) => {
-  // Admin ziet alles behalve het gehashte wachtwoord
   const users = readJSON('users.json').map(u => { const { password, ...rest } = u; return rest; });
   res.json(users);
 });
@@ -250,6 +288,11 @@ app.put('/api/admin/users/:id/role', authMiddleware, adminOnly, (req, res) => {
   const users = readJSON('users.json');
   const idx = users.findIndex(u => u.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: 'Gebruiker niet gevonden' });
+  // Voorkom dat de laatste admin gedegradeerd wordt
+  if (role === 'monteur' && users[idx].role === 'admin') {
+    const adminCount = users.filter(u => u.role === 'admin').length;
+    if (adminCount <= 1) return res.status(400).json({ error: 'Er moet minimaal één beheerder blijven' });
+  }
   users[idx].role = role;
   writeJSON('users.json', users);
   const { password: _, ...safeUser } = users[idx];
@@ -307,7 +350,11 @@ app.put('/api/admin/users/:id', authMiddleware, adminOnly, (req, res) => {
 app.delete('/api/admin/users/:id', authMiddleware, adminOnly, (req, res) => {
   const users = readJSON('users.json');
   const user = users.find(u => u.id === req.params.id);
-  if (user?.role === 'admin') return res.status(400).json({ error: 'Kan de beheerder niet verwijderen' });
+  if (!user) return res.status(404).json({ error: 'Gebruiker niet gevonden' });
+  if (user.role === 'admin') {
+    const adminCount = users.filter(u => u.role === 'admin').length;
+    if (adminCount <= 1) return res.status(400).json({ error: 'Er moet minimaal één beheerder blijven' });
+  }
   writeJSON('users.json', users.filter(u => u.id !== req.params.id));
   res.json({ success: true });
 });
@@ -430,13 +477,72 @@ app.get('/api/lists/:id/items', authMiddleware, (req, res) => {
 });
 
 // ===== INZENDINGEN =====
+if (!fs.existsSync(path.join(dataDir, 'submissions.json'))) writeJSON('submissions.json', []);
+
 app.get('/api/submissions', authMiddleware, (req, res) => {
   const submissions = readJSON('submissions.json');
   if (req.user.role === 'admin') return res.json(submissions);
   res.json(submissions.filter(s => s.userId === req.user.id));
 });
 
-if (!fs.existsSync(path.join(dataDir, 'submissions.json'))) writeJSON('submissions.json', []);
+// Admin: status van een inzending wijzigen
+app.put('/api/admin/submissions/:id/status', authMiddleware, adminOnly, (req, res) => {
+  const { status } = req.body;
+  const validStatuses = ['nieuw', 'in-behandeling', 'verwerkt'];
+  if (!validStatuses.includes(status)) return res.status(400).json({ error: 'Ongeldige status' });
+  const submissions = readJSON('submissions.json');
+  const idx = submissions.findIndex(s => s.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: 'Inzending niet gevonden' });
+  submissions[idx].status = status;
+  submissions[idx].statusUpdatedAt = new Date().toISOString();
+  writeJSON('submissions.json', submissions);
+  res.json(submissions[idx]);
+});
+
+// Admin: CSV-export van alle inzendingen
+app.get('/api/admin/submissions/export', authMiddleware, adminOnly, (req, res) => {
+  const submissions = readJSON('submissions.json');
+  const forms = readJSON('forms.json');
+
+  const rows = [['ID', 'Formulier', 'Monteur', 'Datum', 'Tijd', 'Status', "Foto's", 'Handtekening']];
+  for (const sub of submissions) {
+    const d = new Date(sub.submittedAt);
+    const datum = d.toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const tijd  = d.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' });
+
+    // Basisrijen
+    rows.push([
+      sub.id,
+      sub.formName || '—',
+      sub.userName || '—',
+      datum,
+      tijd,
+      sub.status || 'nieuw',
+      sub.photoCount || 0,
+      sub.hasSignature ? 'Ja' : 'Nee'
+    ]);
+
+    // Veldwaarden toevoegen als extra kolommen (eerste rij als koptekst)
+    const form = forms.find(f => f.id === sub.formId);
+    if (form && sub.data) {
+      for (const field of (form.fields || [])) {
+        if (['photo', 'signature', 'heading', 'divider'].includes(field.type)) continue;
+        const val = sub.data[field.id];
+        const display = Array.isArray(val) ? val.join('; ') : (val !== undefined && val !== null ? String(val) : '');
+        rows[rows.length - 1].push(display);
+        // Koptekst voor eerste sub uitbreiden (vereenvoudigd: niet ideaal voor meerdere formulieren)
+      }
+    }
+  }
+
+  const csvContent = rows.map(r =>
+    r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')
+  ).join('\r\n');
+
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="inzendingen-${new Date().toISOString().slice(0,10)}.csv"`);
+  res.send('\uFEFF' + csvContent); // BOM zodat Excel UTF-8 herkent
+});
 
 // ===== FORM SUBMISSION =====
 app.post('/api/submit/:formId', authMiddleware, upload.fields([{ name: 'photos', maxCount: 20 }]), async (req, res) => {
@@ -458,7 +564,7 @@ app.post('/api/submit/:formId', authMiddleware, upload.fields([{ name: 'photos',
       }
     }
 
-    // Inzending opslaan
+    // Inzending opslaan — foto's bewaren zodat admin ze kan bekijken
     const photoUrls = photos.map(p => `/uploads/${path.basename(p.path)}`);
     const submissions = readJSON('submissions.json');
     submissions.push({
@@ -471,11 +577,11 @@ app.post('/api/submit/:formId', authMiddleware, upload.fields([{ name: 'photos',
       photoCount: photos.length,
       photoUrls,
       hasSignature: !!signature,
+      status: 'nieuw',
       submittedAt: new Date().toISOString()
     });
     writeJSON('submissions.json', submissions);
 
-    // Foto's NIET verwijderen — admin moet ze kunnen bekijken
     res.json({ success: true, message: 'Formulier succesvol verzonden!' });
   } catch (err) {
     photoPaths.forEach(p => { if (fs.existsSync(p)) fs.unlinkSync(p); });
@@ -501,12 +607,11 @@ async function sendEmail(form, formData, photos, signature, user) {
   text += `Datum     : ${datumStr} om ${tijdStr}\n`;
   text += `${'═'.repeat(45)}\n\n`;
 
-  // Helper: check if a field is visible based on form-level conditions and submitted formData
-  function isFieldVisible(field, allFields) {
+  function isFieldVisible(field) {
     if (field.type === 'divider' || field.type === 'heading') return true;
     const conditions = (form.conditions) || [];
     const relevantConds = conditions.filter(c => c.thenFieldId === field.id && c.ifFieldId);
-    if (relevantConds.length === 0) return true; // geen conditie → altijd zichtbaar
+    if (relevantConds.length === 0) return true;
     return relevantConds.some(c => {
       const val = formData[c.ifFieldId];
       const actual = (val === undefined || val === null) ? '' : String(val).toLowerCase();
@@ -524,7 +629,7 @@ async function sendEmail(form, formData, photos, signature, user) {
 
   for (const field of (form.fields || [])) {
     if (['signature','photo','heading','divider'].includes(field.type)) continue;
-    if (!isFieldVisible(field, form.fields)) continue; // skip hidden fields
+    if (!isFieldVisible(field)) continue;
     const val = formData[field.id];
     let displayVal = '—';
     if (field.type === 'checkbox' && Array.isArray(val)) displayVal = val.join(', ') || '—';
@@ -533,7 +638,6 @@ async function sendEmail(form, formData, photos, signature, user) {
   }
   text += `\n— Verzonden via AquaApp\n`;
 
-  // Foto's als bijlage (base64)
   const attachments = [];
   for (let i = 0; i < photos.length; i++) {
     const p = photos[i];
@@ -542,7 +646,6 @@ async function sendEmail(form, formData, photos, signature, user) {
     attachments.push({ filename: `foto_${i + 1}${ext}`, content });
   }
 
-  // Handtekening als bijlage
   if (signature && signature.startsWith('data:image')) {
     const base64Data = signature.replace(/^data:image\/\w+;base64,/, '');
     attachments.push({ filename: 'handtekening.png', content: base64Data });

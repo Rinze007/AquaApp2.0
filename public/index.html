@@ -138,6 +138,21 @@ body::before {
 }
 
 #app { min-height: 100vh; position: relative; z-index: 1; }
+/* Badge kleuren */
+.badge-green  { background: #DCFCE7; color: #16A34A; }
+.badge-amber  { background: #FEF3C7; color: #D97706; }
+.badge-red    { background: #FEE2E2; color: #DC2626; }
+/* Concept-indicator op formuliertegel */
+.draft-dot {
+  position: absolute;
+  top: 10px; right: 10px;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: #F59E0B;
+  border: 2px solid white;
+  box-shadow: 0 0 0 2px rgba(245,158,11,0.3);
+  animation: pulse 2s ease-in-out infinite;
+}
 [data-theme="dark"] { background: #0B1424; }
 [data-theme="dark"] .modal { background: #1A2535; color: #F1F5F9; }
 [data-theme="dark"] .login-card { background: rgba(26,37,53,0.97); }
@@ -154,8 +169,6 @@ body::before {
 [data-theme="dark"] .modal-title { color: #F1F5F9; }
 [data-theme="dark"] .modal-close { background: rgba(255,255,255,0.08); color: #94A3B8; }
 [data-theme="dark"] td { border-bottom-color: rgba(255,255,255,0.06); }
-
-#app { min-height: 100vh; }
 
 a { color: inherit; }
 button, input, select, textarea { font: inherit; }
@@ -1534,6 +1547,8 @@ tr:hover td { background: rgba(248,251,254,0.95); }
 @media (max-width: 900px) {
   .stat-grid { grid-template-columns: repeat(2, 1fr); }
   .quick-actions { grid-template-columns: 1fr; }
+  /* Dashboard 2-kolom grid → 1 kolom op tablet */
+  .dashboard-2col { grid-template-columns: 1fr !important; }
 }
 
 /* ===== RESPONSIVE — MOBILE ===== */
@@ -1683,7 +1698,8 @@ let S = {
   modal: null,
   dropdownOpen: null,
   listItems: {},
-  showConditions: false
+  showConditions: false,
+  subFilterStatus: ''
 };
 
 // ===================================================
@@ -1757,14 +1773,13 @@ function renderLogin() {
 }
 
 function bindLogin() {
-  // Herstel opgeslagen gebruikersnaam indien aanwezig
+  // Herstel opgeslagen gebruikersnaam (NOOIT wachtwoord — security)
   const savedUser = localStorage.getItem('aq_saved_user');
-  const savedPass = localStorage.getItem('aq_saved_pass');
+  // Opgeschoonde oude plaintext-wachtwoord-opslag
+  localStorage.removeItem('aq_saved_pass');
   if (savedUser) {
     const uField = document.getElementById('loginUser');
-    const pField = document.getElementById('loginPass');
     if (uField) uField.value = savedUser;
-    if (pField && savedPass) pField.value = savedPass;
     const cb = document.getElementById('rememberMe');
     if (cb) cb.checked = true;
   }
@@ -1780,12 +1795,11 @@ function bindLogin() {
       S.token = data.token; S.user = data.user;
       localStorage.setItem('aq_token', S.token);
       localStorage.setItem('aq_user', JSON.stringify(S.user));
+      // Sla alleen gebruikersnaam op — nooit het wachtwoord
       if (remember) {
         localStorage.setItem('aq_saved_user', u);
-        localStorage.setItem('aq_saved_pass', p);
       } else {
         localStorage.removeItem('aq_saved_user');
-        localStorage.removeItem('aq_saved_pass');
       }
       await initAfterLogin();
     } catch(e) { S.error = e.message; S.loading = false; render(); }
@@ -1823,8 +1837,13 @@ function bindLogin() {
     wrap.addEventListener('mouseleave', () => {
       targetX = 0; targetY = 0;
     });
-    // Clean up on navigation
+    // Stop animatie bij navigatie (RAF memory leak fix)
     card._stopTilt = () => { cancelAnimationFrame(rafId); };
+    // Automatisch stoppen als de kaart uit de DOM verdwijnt
+    const observer = new MutationObserver(() => {
+      if (!document.contains(card)) { cancelAnimationFrame(rafId); observer.disconnect(); }
+    });
+    observer.observe(document.body, { childList: true, subtree: false });
   }
 
   document.getElementById('toRegister')?.addEventListener('click', () => { S.error = null; S.view = 'register'; render(); });
@@ -2031,7 +2050,7 @@ function renderAdmin() {
     <div class="tab ${S.adminTab==='dashboard'?'active':''}" data-tab="dashboard">🏠 Dashboard</div>
     <div class="tab ${S.adminTab==='forms'?'active':''}" data-tab="forms">📋 Formulieren</div>
     <div class="tab ${S.adminTab==='users'?'active':''}" data-tab="users">👥 Gebruikers</div>
-    <div class="tab ${S.adminTab==='submissions'?'active':''}" data-tab="submissions">📥 Inzendingen ${S.allSubmissions?.length > 0 ? `<span style="background:var(--blue);color:white;border-radius:999px;padding:1px 7px;font-size:11px;margin-left:4px">${S.allSubmissions.length}</span>` : ''}</div>
+    <div class="tab ${S.adminTab==='submissions'?'active':''}" data-tab="submissions">📥 Inzendingen ${(() => { const n = (S.allSubmissions||[]).filter(s=>!s.status||s.status==='nieuw').length; return n > 0 ? `<span style="background:var(--blue);color:white;border-radius:999px;padding:1px 7px;font-size:11px;margin-left:4px">${n}</span>` : ''; })()}</div>
     <div class="tab ${S.adminTab==='lists'?'active':''}" data-tab="lists">📂 Lijsten</div>
   </div>
   <div class="page-content" style="animation:fadeIn 0.4s var(--ease-out) both">
@@ -2135,7 +2154,7 @@ function renderAdminDashboard() {
       </div>
     </div>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+    <div class="dashboard-2col" style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
       <div class="card" style="padding:20px 20px 8px">
         <div class="card-header" style="margin-bottom:12px">
           <span class="card-title">Recente inzendingen</span>
@@ -2823,54 +2842,81 @@ async function saveForm() {
 }
 
 // --- ADMIN SUBMISSIONS ---
+function statusBadge(status) {
+  switch (status) {
+    case 'verwerkt':       return `<span class="badge badge-green">✓ Verwerkt</span>`;
+    case 'in-behandeling': return `<span class="badge badge-amber">⟳ In behandeling</span>`;
+    default:               return `<span class="badge badge-blue" style="background:#EFF6FF;color:#1D4ED8">● Nieuw</span>`;
+  }
+}
+
 function renderAdminSubmissions() {
   const subs = S.allSubmissions || [];
-  const [filterForm, setFilterForm] = [S.subFilterForm || '', v => S.subFilterForm = v];
-  const [filterUser, setFilterUser] = [S.subFilterUser || '', v => S.subFilterUser = v];
+  const filterForm   = S.subFilterForm   || '';
+  const filterUser   = S.subFilterUser   || '';
+  const filterStatus = S.subFilterStatus || '';
   const forms = S.forms;
   const users = S.users.filter(u => u.role !== 'admin');
+  const nieuweCount = subs.filter(s => !s.status || s.status === 'nieuw').length;
 
   const filtered = subs.filter(s => {
-    if (filterForm && s.formId !== filterForm) return false;
-    if (filterUser && s.userId !== filterUser) return false;
+    if (filterForm   && s.formId  !== filterForm)   return false;
+    if (filterUser   && s.userId  !== filterUser)   return false;
+    if (filterStatus && (s.status || 'nieuw') !== filterStatus) return false;
     return true;
   });
 
+  const hasFilter = filterForm || filterUser || filterStatus;
+
   return `
   <div class="section-header">
-    <h2 class="section-title">Inzendingen <span style="font-size:13px;font-weight:400;color:var(--text-muted)">${filtered.length} van ${subs.length}</span></h2>
+    <div>
+      <h2 class="section-title">Inzendingen <span style="font-size:13px;font-weight:400;color:var(--text-muted)">${filtered.length} van ${subs.length}</span></h2>
+      ${nieuweCount > 0 ? `<span style="font-size:12px;color:var(--blue);font-weight:700;margin-top:3px;display:inline-block">${nieuweCount} niet verwerkt</span>` : ''}
+    </div>
+    <a href="/api/admin/submissions/export" class="btn btn-ghost btn-sm" style="display:flex;align-items:center;gap:6px" title="Download als CSV">
+      ⬇ CSV exporteren
+    </a>
   </div>
-  <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap">
-    <select class="form-control" id="subFilterForm" style="max-width:220px;padding:8px 12px">
+  <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center">
+    <select class="form-control" id="subFilterForm" style="max-width:200px;padding:8px 12px;font-size:13px">
       <option value="">Alle formulieren</option>
       ${forms.map(f => `<option value="${f.id}" ${filterForm===f.id?'selected':''}>${esc(f.name)}</option>`).join('')}
     </select>
-    <select class="form-control" id="subFilterUser" style="max-width:220px;padding:8px 12px">
+    <select class="form-control" id="subFilterUser" style="max-width:180px;padding:8px 12px;font-size:13px">
       <option value="">Alle monteurs</option>
       ${users.map(u => `<option value="${u.id}" ${filterUser===u.id?'selected':''}>${esc(u.name)}</option>`).join('')}
     </select>
-    ${filterForm || filterUser ? `<button class="btn btn-ghost btn-sm" id="clearSubFilter" style="align-self:center">✕ Wis filter</button>` : ''}
+    <select class="form-control" id="subFilterStatus" style="max-width:160px;padding:8px 12px;font-size:13px">
+      <option value="">Alle statussen</option>
+      <option value="nieuw" ${filterStatus==='nieuw'?'selected':''}>● Nieuw</option>
+      <option value="in-behandeling" ${filterStatus==='in-behandeling'?'selected':''}>⟳ In behandeling</option>
+      <option value="verwerkt" ${filterStatus==='verwerkt'?'selected':''}>✓ Verwerkt</option>
+    </select>
+    ${hasFilter ? `<button class="btn btn-ghost btn-sm" id="clearSubFilter">✕ Wis filter</button>` : ''}
   </div>
   ${filtered.length === 0 ? `
     <div class="empty"><div class="empty-icon">📥</div>
-    <p class="empty-text">Geen inzendingen gevonden</p></div>` : `
+    <p class="empty-text">Geen inzendingen gevonden</p>
+    <p class="empty-sub">${hasFilter ? 'Pas de filters aan om meer inzendingen te zien.' : 'Nog geen inzendingen ontvangen.'}</p>
+    </div>` : `
   <div class="card" style="padding:0;overflow:hidden">
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Formulier</th><th>Monteur</th><th>Datum</th><th>Tijd</th><th>Foto's</th><th>Handtekening</th><th></th></tr></thead>
+        <thead><tr><th>Status</th><th>Formulier</th><th>Monteur</th><th>Datum</th><th>Foto's</th><th></th></tr></thead>
         <tbody>
           ${filtered.map(s => {
             const d = new Date(s.submittedAt);
             const datum = d.toLocaleDateString('nl-NL', { day:'2-digit', month:'2-digit', year:'numeric' });
-            const tijd = d.toLocaleTimeString('nl-NL', { hour:'2-digit', minute:'2-digit' });
+            const tijd  = d.toLocaleTimeString('nl-NL', { hour:'2-digit', minute:'2-digit' });
             const monteur = users.find(u => u.id === s.userId);
-            return `<tr class="admin-sub-row" data-sid="${s.id}" style="cursor:pointer">
+            const isNieuw = !s.status || s.status === 'nieuw';
+            return `<tr class="admin-sub-row" data-sid="${s.id}" style="cursor:pointer${isNieuw ? ';font-weight:600' : ''}">
+              <td>${statusBadge(s.status)}</td>
               <td><strong>${esc(s.formName || '—')}</strong></td>
               <td>${esc(monteur?.name || s.userName || '—')}</td>
-              <td class="text-sm">${datum}</td>
-              <td class="text-sm text-muted">${tijd}</td>
+              <td class="text-sm">${datum} <span style="color:var(--text-muted)">${tijd}</span></td>
               <td>${s.photoCount > 0 ? `<span class="badge badge-blue">📷 ${s.photoCount}</span>` : '<span class="text-muted text-sm">—</span>'}</td>
-              <td>${s.hasSignature ? '<span class="badge badge-blue">✓</span>' : '<span class="text-muted text-sm">—</span>'}</td>
               <td><button class="btn btn-ghost btn-sm admin-sub-detail-btn" data-sid="${s.id}">🔍 Bekijk</button></td>
             </tr>`;
           }).join('')}
@@ -3033,6 +3079,69 @@ function bindAdminUsers() {
   }));
 }
 
+function openSubDetail(sid) {
+  const s = (S.allSubmissions || []).find(x => x.id === sid);
+  if (!s) return;
+  const form = S.forms.find(f => f.id === s.formId);
+  const fields = form?.fields || [];
+  const monteur = S.users.find(u => u.id === s.userId);
+  const d = new Date(s.submittedAt);
+  const datum = d.toLocaleDateString('nl-NL', { day:'2-digit', month:'2-digit', year:'numeric' });
+  const tijd  = d.toLocaleTimeString('nl-NL', { hour:'2-digit', minute:'2-digit' });
+
+  let details = `
+    <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--border)">
+      <div style="flex:1;min-width:120px">
+        <div style="font-size:10px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px">Monteur</div>
+        <div style="font-size:14px;font-weight:600">${esc(monteur?.name || s.userName || '—')}</div>
+      </div>
+      <div style="flex:1;min-width:120px">
+        <div style="font-size:10px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px">Datum &amp; tijd</div>
+        <div style="font-size:14px">${datum} om ${tijd}</div>
+      </div>
+      <div style="width:100%">
+        <div style="font-size:10px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Status aanpassen</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn btn-sm sub-status-btn ${!s.status||s.status==='nieuw'?'btn-primary':''}" data-sid="${s.id}" data-status="nieuw" style="${!s.status||s.status==='nieuw'?'':'background:#EFF6FF;color:#1D4ED8'}">● Nieuw</button>
+          <button class="btn btn-sm sub-status-btn ${s.status==='in-behandeling'?'btn-primary':''}" data-sid="${s.id}" data-status="in-behandeling" style="${s.status==='in-behandeling'?'':'background:#FEF3C7;color:#D97706'}">⟳ In behandeling</button>
+          <button class="btn btn-sm sub-status-btn ${s.status==='verwerkt'?'btn-success':''}" data-sid="${s.id}" data-status="verwerkt" style="${s.status==='verwerkt'?'':'background:#DCFCE7;color:#16A34A'}">✓ Verwerkt</button>
+        </div>
+      </div>
+    </div>`;
+
+  details += fields.filter(f => !['photo','signature','heading','divider'].includes(f.type)).map(f => {
+    const val = s.data?.[f.id];
+    let display = '—';
+    if (f.type === 'checkbox' && Array.isArray(val)) display = val.join(', ') || '—';
+    else if (val !== undefined && val !== null && val !== '') display = String(val);
+    return `<div style="margin-bottom:10px">
+      <div style="font-size:11px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:0.5px">${esc(f.label?.split('\n')[0] || '')}</div>
+      <div style="font-size:14px;padding:6px 0;border-bottom:1px solid var(--border)">${esc(display)}</div>
+    </div>`;
+  }).join('');
+
+  if (s.photoCount > 0) {
+    if (s.photoUrls && s.photoUrls.length > 0) {
+      details += `<div style="margin-top:16px">
+        <div style="font-weight:700;font-size:13px;color:var(--text-muted);margin-bottom:8px">📷 FOTO'S (${s.photoUrls.length})</div>
+        <div style="display:flex;flex-wrap:wrap;gap:10px">
+          ${s.photoUrls.map(url => `
+            <a href="${url}" target="_blank" rel="noopener" style="display:block;width:110px;height:110px;border-radius:10px;overflow:hidden;border:2px solid var(--border);flex-shrink:0">
+              <img src="${url}" style="width:100%;height:100%;object-fit:cover" loading="lazy"
+                onerror="this.parentElement.innerHTML='<div style=\\'display:flex;align-items:center;justify-content:center;height:100%;font-size:28px;background:#f1f5f9\\'>📷</div>'">
+            </a>`).join('')}
+        </div>
+      </div>`;
+    } else {
+      details += `<div style="margin-top:8px"><span class="badge badge-blue">📷 ${s.photoCount} foto('s) meegestuurd</span></div>`;
+    }
+  }
+  if (s.hasSignature) details += `<div style="margin-top:6px"><span class="badge badge-green">✓ Handtekening meegestuurd</span></div>`;
+
+  S.modal = { type: 'submissionDetail', title: `${s.formName || 'Inzending'} — ${statusBadge(s.status)}`, content: details };
+  render();
+}
+
 function bindAdminSubmissions() {
   document.getElementById('subFilterForm')?.addEventListener('change', e => {
     S.subFilterForm = e.target.value; render();
@@ -3040,51 +3149,36 @@ function bindAdminSubmissions() {
   document.getElementById('subFilterUser')?.addEventListener('change', e => {
     S.subFilterUser = e.target.value; render();
   });
+  document.getElementById('subFilterStatus')?.addEventListener('change', e => {
+    S.subFilterStatus = e.target.value; render();
+  });
   document.getElementById('clearSubFilter')?.addEventListener('click', () => {
-    S.subFilterForm = ''; S.subFilterUser = ''; render();
+    S.subFilterForm = ''; S.subFilterUser = ''; S.subFilterStatus = ''; render();
   });
   document.querySelectorAll('.admin-sub-detail-btn').forEach(b => b.addEventListener('click', e => {
     e.stopPropagation();
-    const s = (S.allSubmissions || []).find(x => x.id === b.dataset.sid);
-    if (!s) return;
-    const form = S.forms.find(f => f.id === s.formId);
-    const fields = form?.fields || [];
-    const monteur = S.users.find(u => u.id === s.userId);
-    const d = new Date(s.submittedAt);
-    const datum = d.toLocaleDateString('nl-NL', { day:'2-digit', month:'2-digit', year:'numeric' });
-    const tijd = d.toLocaleTimeString('nl-NL', { hour:'2-digit', minute:'2-digit' });
-    let details = `<div style="display:flex;gap:16px;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border)">
-      <div><div style="font-size:10px;font-weight:700;color:var(--blue);text-transform:uppercase">Monteur</div><div style="font-size:14px">${esc(monteur?.name || s.userName || '—')}</div></div>
-      <div><div style="font-size:10px;font-weight:700;color:var(--blue);text-transform:uppercase">Datum</div><div style="font-size:14px">${datum} om ${tijd}</div></div>
-    </div>`;
-    details += fields.filter(f => !['photo','signature','heading','divider'].includes(f.type)).map(f => {
-      const val = s.data?.[f.id];
-      let display = '—';
-      if (f.type === 'checkbox' && Array.isArray(val)) display = val.join(', ') || '—';
-      else if (val !== undefined && val !== null && val !== '') display = String(val);
-      return `<div style="margin-bottom:10px">
-        <div style="font-size:11px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:0.5px">${esc(f.label?.split('\n')[0] || '')}</div>
-        <div style="font-size:14px;padding:6px 0;border-bottom:1px solid var(--border)">${esc(display)}</div>
-      </div>`;
-    }).join('');
-    if (s.photoCount > 0) {
-      if (s.photoUrls && s.photoUrls.length > 0) {
-        details += `<div style="margin-top:16px">
-          <div style="font-weight:700;font-size:13px;color:var(--text-muted);margin-bottom:8px;">📷 FOTO'S (${s.photoUrls.length})</div>
-          <div style="display:flex;flex-wrap:wrap;gap:10px;">
-            ${s.photoUrls.map(url => `
-              <a href="${url}" target="_blank" rel="noopener" style="display:block;width:110px;height:110px;border-radius:10px;overflow:hidden;border:2px solid var(--border);flex-shrink:0;">
-                <img src="${url}" style="width:100%;height:100%;object-fit:cover;" loading="lazy" onerror="this.parentElement.innerHTML='<div style=\\'display:flex;align-items:center;justify-content:center;height:100%;font-size:28px;background:#f1f5f9\\'>📷</div>'">
-              </a>`).join('')}
-          </div>
-        </div>`;
-      } else {
-        details += `<div style="margin-top:8px"><span class="badge badge-blue">📷 ${s.photoCount} foto('s) meegestuurd</span></div>`;
-      }
-    }
-    if (s.hasSignature) details += `<div style="margin-top:6px"><span class="badge badge-blue">✓ Handtekening meegestuurd</span></div>`;
-    S.modal = { type: 'submissionDetail', title: s.formName || 'Inzending', content: details };
-    render();
+    openSubDetail(b.dataset.sid);
+  }));
+  document.querySelectorAll('.admin-sub-row').forEach(row => row.addEventListener('click', () => {
+    openSubDetail(row.dataset.sid);
+  }));
+}
+
+// Status-knoppen in de detail modal binden (aangeroepen vanuit bindModal)
+function bindSubmissionStatusBtns() {
+  document.querySelectorAll('.sub-status-btn').forEach(btn => btn.addEventListener('click', async e => {
+    e.stopPropagation();
+    const sid = btn.dataset.sid;
+    const status = btn.dataset.status;
+    try {
+      const updated = await api('PUT', `/api/admin/submissions/${sid}/status`, { status });
+      // Update lokaal
+      const idx = (S.allSubmissions || []).findIndex(s => s.id === sid);
+      if (idx !== -1) S.allSubmissions[idx].status = updated.status;
+      S.modal = null;
+      S.success = `Status gewijzigd naar "${status}".`;
+      render();
+    } catch(e) { S.error = e.message; render(); }
   }));
 }
 
@@ -3238,9 +3332,10 @@ function renderModal() {
         <button class="btn btn-primary" id="modalRenameList">Opslaan</button>
       </div>`;
   } else if (m.type === 'submissionDetail') {
+    // Titel kan HTML-badges bevatten — niet escapen
     content = `
       <div class="modal-header">
-        <h3 class="modal-title">${esc(m.title)}</h3>
+        <h3 class="modal-title" style="font-size:16px">${m.title}</h3>
         <button class="modal-close" id="modalClose">×</button>
       </div>
       <div>${m.content}</div>
@@ -3258,6 +3353,9 @@ function bindModal() {
   document.getElementById('modalClose')?.addEventListener('click', close);
   document.getElementById('modalClose2')?.addEventListener('click', close);
   document.getElementById('modalOverlay')?.addEventListener('click', e => { if (e.target.id === 'modalOverlay') close(); });
+
+  // Status-knoppen in inzending detail modal
+  if (m.type === 'submissionDetail') bindSubmissionStatusBtns();
 
   if (m.type === 'confirm') {
     document.getElementById('modalConfirm')?.addEventListener('click', async () => {
@@ -3405,16 +3503,19 @@ function renderMonteur() {
           const grad = TILE_GRADIENTS[fi % TILE_GRADIENTS.length];
           const emoji = TILE_EMOJIS[fi % TILE_EMOJIS.length];
           const fieldCount = (f.fields||[]).length;
+          const hasDraft = !!loadDraft(f.id);
           return `
           <div class="form-tile" data-id="${f.id}" style="animation:popIn 0.5s var(--ease-spring) ${fi * 0.06}s both;padding:0;text-align:left;overflow:hidden">
+            ${hasDraft ? '<div class="draft-dot" title="Concept opgeslagen"></div>' : ''}
             <div class="form-tile-cover" style="background:${grad};height:88px">
               <span style="font-size:36px;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.3));position:relative;z-index:1">${emoji}</span>
             </div>
             <div style="padding:14px 16px 16px">
               <div class="form-tile-name" style="font-size:14px;margin-bottom:4px;text-align:left">${esc(f.name)}</div>
               <div class="form-tile-fields" style="text-align:left">${fieldCount} veld${fieldCount!==1?'en':''}</div>
-              <div style="margin-top:12px">
+              <div style="margin-top:12px;display:flex;align-items:center;gap:6px">
                 <span style="background:rgba(0,87,184,0.1);color:var(--blue);font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px">Invullen →</span>
+                ${hasDraft ? '<span style="background:#FEF3C7;color:#D97706;font-size:10px;font-weight:700;padding:3px 8px;border-radius:999px">Concept</span>' : ''}
               </div>
             </div>
           </div>`;
