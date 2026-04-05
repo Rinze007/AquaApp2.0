@@ -3291,8 +3291,8 @@ function renderMonteurProfile() {
   <div class="card" style="max-width:560px;padding:28px 28px 24px">
     <div style="display:flex;align-items:center;gap:20px;margin-bottom:24px">
       <div style="position:relative">
-        <div style="width:88px;height:88px;border-radius:50%;background:linear-gradient(135deg,#dbeafe,#eff6ff);border:3px solid var(--blue);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:32px">
-          ${photoUrl ? `<img src="${photoUrl}" style="width:100%;height:100%;object-fit:cover">` : '👤'}
+        <div id="profPhotoBox" style="width:88px;height:88px;border-radius:50%;background:linear-gradient(135deg,#dbeafe,#eff6ff);border:3px solid var(--blue);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:32px">
+          ${photoUrl ? `<img id="profPhotoImg" src="${photoUrl}" style="width:100%;height:100%;object-fit:cover">` : '<span id="profPhotoEmoji">👤</span>'}
         </div>
         <label for="profilePhotoInput" style="position:absolute;bottom:0;right:0;background:var(--blue);color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px" title="Foto wijzigen">📷</label>
         <input type="file" id="profilePhotoInput" accept="image/*" style="display:none">
@@ -3349,19 +3349,23 @@ function bindMonteur() {
       S.myProfile = updated;
       S.user = { ...S.user, ...updated };
       localStorage.setItem('aq_user', JSON.stringify(S.user));
-      S.success = 'Profiel opgeslagen!';
+      S.success = 'Profiel opgeslagen! 🎉';
       S.loading = false; render();
     } catch(e) { S.error = e.message; S.loading = false; render(); }
   });
 
-  // Foto preview bij selectie
+  // Foto preview bij selectie — meteen zichtbaar in de cirkel
   document.getElementById('profilePhotoInput')?.addEventListener('change', e => {
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
     reader.onload = ev => {
-      const img = document.querySelector('.login-card img, [data-profphoto]');
-      const container = document.querySelector('[data-profphotobox]');
+      const box = document.getElementById('profPhotoBox');
+      if (!box) return;
+      box.innerHTML = `<img id="profPhotoImg" src="${ev.target.result}" style="width:100%;height:100%;object-fit:cover">`;
+      // Update ook de nav-avatar alvast
+      const navAvatar = document.querySelector('.nav-avatar');
+      if (navAvatar) navAvatar.innerHTML = `<img src="${ev.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
     };
     reader.readAsDataURL(file);
   });
