@@ -9,38 +9,82 @@
   <meta name="apple-mobile-web-app-title" content="AquaApp">
   <link rel="manifest" href="/manifest.json">
   <title>AquaApp</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400&display=swap" rel="stylesheet">
   <style>
 :root {
+  /* Core palette */
   --blue: #0057B8;
   --blue-dark: #003E87;
   --blue-ink: #0F2744;
   --blue-light: #EAF3FF;
   --blue-soft: #F4F8FD;
+  --indigo: #4F46E5;
+  --violet: #7C3AED;
+  --cyan: #06B6D4;
+  --emerald: #10B981;
+  --amber: #F59E0B;
+  --rose: #F43F5E;
+  /* Neutral */
   --grey: #94A3B8;
   --grey-light: #F6F9FC;
-  --surface: rgba(255,255,255,0.94);
+  --surface: rgba(255,255,255,0.92);
+  --surface-glass: rgba(255,255,255,0.72);
   --surface-solid: #FFFFFF;
   --surface-alt: #F8FBFE;
-  --border: #D9E5F1;
+  --border: rgba(209,226,241,0.9);
   --border-strong: #C7D8E8;
-  --text: #1E293B;
+  --text: #0F1923;
   --text-muted: #64748B;
+  --text-soft: #94A3B8;
   --white: #FFFFFF;
-  --success: #1F9D61;
-  --danger: #D64545;
-  --warning: #D98A00;
-  --radius-sm: 10px;
-  --radius: 16px;
+  /* Semantic */
+  --success: #10B981;
+  --danger: #F43F5E;
+  --warning: #F59E0B;
+  /* Radius */
+  --radius-xs: 8px;
+  --radius-sm: 12px;
+  --radius: 18px;
   --radius-lg: 24px;
-  --shadow-xs: 0 2px 8px rgba(15,39,68,0.04);
-  --shadow: 0 10px 30px rgba(15,39,68,0.08);
-  --shadow-lg: 0 22px 50px rgba(15,39,68,0.14);
-  --shadow-focus: 0 0 0 4px rgba(0,87,184,0.12);
+  --radius-xl: 32px;
+  /* Shadows */
+  --shadow-xs: 0 2px 8px rgba(15,39,68,0.05);
+  --shadow: 0 8px 28px rgba(15,39,68,0.09);
+  --shadow-lg: 0 20px 52px rgba(15,39,68,0.15);
+  --shadow-xl: 0 32px 80px rgba(15,39,68,0.22);
+  --shadow-focus: 0 0 0 4px rgba(0,87,184,0.14);
+  --shadow-glow: 0 0 40px rgba(0,87,184,0.25);
+  /* Gradients */
   --gradient-brand: linear-gradient(135deg, #0B2540 0%, #004FAD 52%, #0A79E8 100%);
   --gradient-brand-soft: linear-gradient(135deg, #EAF3FF 0%, #F7FAFE 100%);
+  --gradient-indigo: linear-gradient(135deg, #4338CA, #6D28D9);
+  --gradient-emerald: linear-gradient(135deg, #059669, #10B981);
+  --gradient-amber: linear-gradient(135deg, #D97706, #F59E0B);
+  --gradient-rose: linear-gradient(135deg, #E11D48, #F43F5E);
+  --gradient-cyan: linear-gradient(135deg, #0891B2, #06B6D4);
+  /* Easing */
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
   --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+/* ===== DARK MODE ===== */
+[data-theme="dark"] {
+  --surface: rgba(22,32,46,0.95);
+  --surface-glass: rgba(18,26,38,0.75);
+  --surface-solid: #1A2535;
+  --surface-alt: #0F1923;
+  --border: rgba(255,255,255,0.08);
+  --border-strong: rgba(255,255,255,0.14);
+  --text: #F1F5F9;
+  --text-muted: #94A3B8;
+  --text-soft: #64748B;
+  --grey-light: #1E2D3D;
+  --shadow: 0 8px 28px rgba(0,0,0,0.35);
+  --shadow-lg: 0 20px 52px rgba(0,0,0,0.45);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -50,14 +94,46 @@ html {
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Inter, sans-serif;
-  background:
-    radial-gradient(circle at top left, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 25%),
-    linear-gradient(180deg, #F5F9FD 0%, #ECF3F9 100%);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #EEF4FB;
   color: var(--text);
   min-height: 100vh;
-  line-height: 1.45;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
 }
+
+/* Animated aurora mesh background */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 0% 0%, rgba(0,87,184,0.12) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 80% at 100% 0%, rgba(99,102,241,0.10) 0%, transparent 60%),
+    radial-gradient(ellipse 70% 50% at 50% 100%, rgba(16,185,129,0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 60% at 100% 60%, rgba(6,182,212,0.06) 0%, transparent 50%),
+    linear-gradient(180deg, #EEF4FB 0%, #E4EEF8 100%);
+  pointer-events: none;
+  z-index: 0;
+  animation: auroraShift 14s ease-in-out infinite alternate;
+}
+
+[data-theme="dark"] body::before {
+  background:
+    radial-gradient(ellipse 80% 60% at 0% 0%, rgba(0,87,184,0.25) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 80% at 100% 0%, rgba(99,102,241,0.20) 0%, transparent 60%),
+    radial-gradient(ellipse 70% 50% at 50% 100%, rgba(16,185,129,0.12) 0%, transparent 60%),
+    linear-gradient(180deg, #0B1424 0%, #0D1B2A 100%);
+}
+
+@keyframes auroraShift {
+  0%   { background-position: 0% 0%, 100% 0%, 50% 100%, 100% 60%; }
+  50%  { background-position: 10% 20%, 90% 10%, 60% 90%, 80% 50%; }
+  100% { background-position: 5% 10%, 95% 5%, 55% 95%, 90% 55%; }
+}
+
+#app { min-height: 100vh; position: relative; z-index: 1; }
+[data-theme="dark"] { background: #0B1424; }
 
 #app { min-height: 100vh; }
 
@@ -106,6 +182,308 @@ button, input, select, textarea { font: inherit; }
 @keyframes progressFill { from { width:0%; } }
 @keyframes glowPulse { 0%,100% { box-shadow:0 0 20px rgba(0,87,184,0.3); } 50% { box-shadow:0 0 40px rgba(0,87,184,0.6); } }
 @keyframes checkBounce { 0% { transform:scale(0); } 60% { transform:scale(1.3); } 100% { transform:scale(1); } }
+@keyframes countUp { from { opacity:0; transform:translateY(12px) scale(0.9); } to { opacity:1; transform:translateY(0) scale(1); } }
+@keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.55; } }
+@keyframes gradientShift { 0% { background-position:0% 50%; } 50% { background-position:100% 50%; } 100% { background-position:0% 50%; } }
+@keyframes confettiFall { 0% { transform: translateY(-10px) rotate(0deg); opacity: 1; } 100% { transform: translateY(100vh) rotate(720deg); opacity: 0; } }
+@keyframes successBurst { 0% { transform:scale(0.5); opacity:0; } 65% { transform:scale(1.15); } 100% { transform:scale(1); opacity:1; } }
+@keyframes floatBob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+@keyframes waveIn { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0% 0 0); } }
+
+/* ===== STAT CARDS ===== */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 16px;
+  margin-bottom: 28px;
+}
+.stat-card {
+  border-radius: var(--radius-lg);
+  padding: 22px 22px 20px;
+  position: relative;
+  overflow: hidden;
+  cursor: default;
+  transition: transform 0.28s var(--ease-spring), box-shadow 0.28s var(--ease-smooth);
+  animation: fadeIn 0.5s var(--ease-out) both;
+}
+.stat-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.18) 0%, transparent 60%);
+  pointer-events: none;
+}
+.stat-card:hover { transform: translateY(-4px) scale(1.02); }
+.stat-card-icon {
+  font-size: 28px;
+  margin-bottom: 14px;
+  display: block;
+  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.2));
+  animation: floatBob 3s ease-in-out infinite;
+}
+.stat-number {
+  font-size: 44px;
+  font-weight: 900;
+  color: white;
+  line-height: 1;
+  letter-spacing: -2px;
+  animation: countUp 0.7s var(--ease-spring) 0.2s both;
+  font-variant-numeric: tabular-nums;
+}
+.stat-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.78);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-top: 6px;
+}
+.stat-trend {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(255,255,255,0.22);
+  padding: 3px 8px;
+  border-radius: 999px;
+  color: white;
+}
+
+/* ===== DASHBOARD ACTIVITY ===== */
+.activity-feed { display: flex; flex-direction: column; gap: 2px; }
+.activity-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  border-radius: 14px;
+  transition: background 0.18s;
+  animation: slideInRight 0.4s var(--ease-out) both;
+}
+.activity-item:hover { background: rgba(0,87,184,0.05); }
+.activity-dot {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+.activity-text { flex: 1; font-size: 13px; color: var(--text); }
+.activity-time { font-size: 11px; color: var(--text-muted); font-variant-numeric: tabular-nums; flex-shrink: 0; }
+
+/* ===== GREETING HERO ===== */
+.greeting-hero {
+  background: var(--gradient-brand);
+  background-size: 200% 200%;
+  animation: gradientShift 8s ease-in-out infinite;
+  border-radius: var(--radius-xl);
+  padding: 32px 32px 28px;
+  margin-bottom: 24px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-xl);
+}
+.greeting-hero::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 60%;
+  padding-top: 60%;
+  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 65%);
+  pointer-events: none;
+}
+.greeting-hero::after {
+  content: '';
+  position: absolute;
+  bottom: -30%;
+  left: -10%;
+  width: 50%;
+  padding-top: 50%;
+  background: radial-gradient(circle, rgba(255,255,255,0.06) 0%, transparent 65%);
+  pointer-events: none;
+}
+.greeting-name {
+  font-size: 28px;
+  font-weight: 900;
+  color: white;
+  letter-spacing: -0.5px;
+  margin-bottom: 6px;
+  position: relative;
+}
+.greeting-sub {
+  font-size: 14px;
+  color: rgba(255,255,255,0.75);
+  position: relative;
+}
+.greeting-emoji {
+  position: absolute;
+  right: 32px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 64px;
+  opacity: 0.9;
+  animation: floatBob 4s ease-in-out infinite;
+  filter: drop-shadow(0 8px 24px rgba(0,0,0,0.25));
+}
+.greeting-stats {
+  display: flex;
+  gap: 24px;
+  margin-top: 20px;
+  position: relative;
+}
+.greeting-stat-item {
+  text-align: center;
+  background: rgba(255,255,255,0.12);
+  border-radius: 14px;
+  padding: 12px 20px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.16);
+}
+.greeting-stat-num {
+  font-size: 24px;
+  font-weight: 900;
+  color: white;
+  letter-spacing: -1px;
+}
+.greeting-stat-label {
+  font-size: 11px;
+  color: rgba(255,255,255,0.65);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* ===== COLORFUL FORM TILES ===== */
+.form-tile-cover {
+  height: 80px;
+  border-radius: 14px 14px 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.form-tile-cover::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.18) 0%, transparent 60%);
+}
+
+/* ===== CONFETTI ===== */
+#confetti-canvas {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* ===== DARK MODE TOGGLE ===== */
+.dark-toggle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.14);
+  border: 1px solid rgba(255,255,255,0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background 0.2s, transform 0.3s var(--ease-spring);
+  flex-shrink: 0;
+}
+.dark-toggle:hover { background: rgba(255,255,255,0.24); transform: rotate(20deg); }
+
+/* ===== ENHANCED SUBMITTED SCREEN ===== */
+.submitted-hero {
+  text-align: center;
+  padding: 52px 24px 40px;
+  position: relative;
+}
+.submitted-check {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #059669, #10B981);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 46px;
+  margin: 0 auto 24px;
+  box-shadow: 0 20px 50px rgba(16,185,129,0.4);
+  animation: successBurst 0.8s var(--ease-spring) both;
+}
+.submitted-title {
+  font-size: 28px;
+  font-weight: 900;
+  color: var(--text);
+  letter-spacing: -0.5px;
+  margin-bottom: 8px;
+}
+.submitted-sub { font-size: 15px; color: var(--text-muted); }
+
+/* ===== AVATAR ===== */
+.nav-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+  border: 2px solid rgba(255,255,255,0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 800;
+  color: white;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.nav-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+/* ===== QUICK ACTION CARDS ===== */
+.quick-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.quick-action-card {
+  background: var(--surface);
+  backdrop-filter: blur(12px);
+  border-radius: var(--radius);
+  padding: 18px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: transform 0.22s var(--ease-spring), box-shadow 0.22s var(--ease-smooth), background 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: var(--shadow-xs);
+}
+.quick-action-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow);
+  background: white;
+}
+.quick-action-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+.quick-action-label { font-size: 13px; font-weight: 700; color: var(--text); }
 
 /* ===== LOGO ===== */
 .logo {
@@ -238,6 +616,15 @@ textarea.form-control {
   min-height: 96px;
 }
 select.form-control { cursor: pointer; }
+[data-theme="dark"] .form-control {
+  background: rgba(255,255,255,0.06);
+  border-color: rgba(255,255,255,0.12);
+  color: var(--text);
+}
+[data-theme="dark"] .form-control:focus {
+  border-color: var(--blue);
+  background: rgba(255,255,255,0.09);
+}
 
 /* ===== BUTTONS ===== */
 .btn {
@@ -389,7 +776,7 @@ select.form-control { cursor: pointer; }
 /* ===== TABS ===== */
 .tabs {
   background: rgba(255,255,255,0.82);
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(12px) saturate(160%);
   border-bottom: 1px solid rgba(217,229,241,0.95);
   padding: 0 24px;
   display: flex;
@@ -398,6 +785,10 @@ select.form-control { cursor: pointer; }
   position: sticky;
   top: 70px;
   z-index: 90;
+}
+[data-theme="dark"] .tabs {
+  background: rgba(13,23,38,0.9);
+  border-bottom-color: rgba(255,255,255,0.08);
 }
 .tab {
   padding: 16px 18px 14px;
@@ -440,18 +831,23 @@ select.form-control { cursor: pointer; }
 /* ===== CARDS ===== */
 .card {
   background: var(--surface);
-  backdrop-filter: blur(10px) saturate(140%);
-  border-radius: 20px;
+  backdrop-filter: blur(16px) saturate(160%);
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow), 0 1px 0 rgba(255,255,255,0.8) inset;
   padding: 24px;
   margin-bottom: 18px;
-  border: 1px solid rgba(217,229,241,0.95);
+  border: 1px solid var(--border);
   transition: transform 0.25s var(--ease-spring), box-shadow 0.25s var(--ease-smooth);
   animation: fadeIn 0.5s var(--ease-out) both;
 }
 .card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-3px);
   box-shadow: var(--shadow-lg), 0 1px 0 rgba(255,255,255,0.8) inset;
+}
+[data-theme="dark"] .card {
+  background: rgba(22,32,46,0.88);
+  border-color: rgba(255,255,255,0.08);
+  box-shadow: 0 8px 28px rgba(0,0,0,0.4), 0 1px 0 rgba(255,255,255,0.06) inset;
 }
 .card-header {
   display: flex;
@@ -489,9 +885,11 @@ th {
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  background: #F6FAFE;
+  background: rgba(246,250,254,0.9);
   border-bottom: 1px solid var(--border);
 }
+[data-theme="dark"] th { background: rgba(255,255,255,0.04); }
+[data-theme="dark"] tr:hover td { background: rgba(255,255,255,0.03); }
 td {
   padding: 14px;
   border-bottom: 1px solid rgba(217,229,241,0.92);
@@ -578,18 +976,22 @@ tr:hover td { background: rgba(248,251,254,0.95); }
   perspective: 900px;
 }
 .form-tile {
-  background: linear-gradient(160deg, rgba(255,255,255,0.99) 0%, rgba(240,248,255,0.97) 100%);
-  border-radius: 20px;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
   padding: 24px 18px;
   cursor: pointer;
   box-shadow: var(--shadow), 0 1px 0 rgba(255,255,255,0.9) inset;
-  border: 1px solid rgba(217,229,241,0.95);
+  border: 1px solid var(--border);
   transition: transform 0.28s var(--ease-spring), box-shadow 0.28s var(--ease-smooth), border-color 0.22s ease;
   text-align: center;
   transform-style: preserve-3d;
   will-change: transform;
   position: relative;
   overflow: hidden;
+}
+[data-theme="dark"] .form-tile {
+  background: rgba(22,32,46,0.88);
+  border-color: rgba(255,255,255,0.08);
 }
 .form-tile::before {
   content: '';
@@ -845,11 +1247,15 @@ tr:hover td { background: rgba(248,251,254,0.95); }
   align-items: center;
   gap: 10px;
   padding: 11px 14px;
-  background: #F8FBFE;
+  background: rgba(248,251,254,0.9);
   border: 1px solid rgba(217,229,241,0.96);
   border-radius: 12px;
   cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
 }
+.check-item:hover { background: var(--blue-light); border-color: rgba(0,87,184,0.15); }
+[data-theme="dark"] .check-item { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); }
+[data-theme="dark"] .check-item:hover { background: rgba(0,87,184,0.15); }
 .check-item input[type="checkbox"], .check-item input[type="radio"] {
   width: 18px;
   height: 18px;
@@ -1160,7 +1566,7 @@ let S = {
   token: localStorage.getItem('aq_token'),
   user: JSON.parse(localStorage.getItem('aq_user') || 'null'),
   view: 'loading',
-  adminTab: 'forms',
+  adminTab: 'dashboard',
   // Admin data
   forms: [], users: [], lists: [], allSubmissions: [],
   // Form builder
@@ -1523,14 +1929,16 @@ function renderAdmin() {
   return `
   ${renderTopNav()}
   <div class="tabs">
+    <div class="tab ${S.adminTab==='dashboard'?'active':''}" data-tab="dashboard">🏠 Dashboard</div>
     <div class="tab ${S.adminTab==='forms'?'active':''}" data-tab="forms">📋 Formulieren</div>
-    <div class="tab ${S.adminTab==='users'?'active':''}" data-tab="users">👤 Gebruikers</div>
+    <div class="tab ${S.adminTab==='users'?'active':''}" data-tab="users">👥 Monteurs</div>
     <div class="tab ${S.adminTab==='submissions'?'active':''}" data-tab="submissions">📥 Inzendingen ${S.allSubmissions?.length > 0 ? `<span style="background:var(--blue);color:white;border-radius:999px;padding:1px 7px;font-size:11px;margin-left:4px">${S.allSubmissions.length}</span>` : ''}</div>
     <div class="tab ${S.adminTab==='lists'?'active':''}" data-tab="lists">📂 Lijsten</div>
   </div>
   <div class="page-content" style="animation:fadeIn 0.4s var(--ease-out) both">
     ${S.error ? `<div class="alert alert-error" style="animation:slideInUp 0.4s ease">⚠ ${S.error}</div>` : ''}
     ${S.success ? `<div class="alert alert-success" style="animation:slideInUp 0.4s ease">✓ ${S.success}</div>` : ''}
+    ${S.adminTab === 'dashboard' ? renderAdminDashboard() : ''}
     ${S.adminTab === 'forms' ? renderAdminForms() : ''}
     ${S.adminTab === 'users' ? renderAdminUsers() : ''}
     ${S.adminTab === 'submissions' ? renderAdminSubmissions() : ''}
@@ -1547,12 +1955,143 @@ function bindAdmin() {
     })
   );
   document.getElementById('logoutBtn')?.addEventListener('click', logout);
+  bindDarkToggle();
 
+  if (S.adminTab === 'dashboard') bindAdminDashboard();
   if (S.adminTab === 'forms') bindAdminForms();
   if (S.adminTab === 'users') bindAdminUsers();
   if (S.adminTab === 'submissions') bindAdminSubmissions();
   if (S.adminTab === 'lists') bindAdminLists();
   if (S.modal) bindModal();
+}
+
+function bindDarkToggle() {
+  document.getElementById('darkToggleBtn')?.addEventListener('click', () => {
+    const html = document.documentElement;
+    const isDark = html.getAttribute('data-theme') === 'dark';
+    html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+    localStorage.setItem('aq_theme', isDark ? 'light' : 'dark');
+    // Update toggle icon without full re-render
+    const btn = document.getElementById('darkToggleBtn');
+    if (btn) btn.textContent = isDark ? '🌙' : '☀️';
+  });
+}
+
+// --- ADMIN DASHBOARD ---
+function renderAdminDashboard() {
+  const monteurs = S.users.filter(u => u.role !== 'admin');
+  const submissions = S.allSubmissions || [];
+  const now = new Date();
+  const todayStr = now.toDateString();
+  const todayCount = submissions.filter(s => new Date(s.submittedAt).toDateString() === todayStr).length;
+  const weekAgo = new Date(now - 7 * 86400000);
+  const weekCount = submissions.filter(s => new Date(s.submittedAt) >= weekAgo).length;
+  const recent = submissions.slice(0, 8);
+
+  const timeAgo = ts => {
+    const diff = (Date.now() - new Date(ts)) / 1000;
+    if (diff < 60) return 'zojuist';
+    if (diff < 3600) return Math.floor(diff/60) + 'm geleden';
+    if (diff < 86400) return Math.floor(diff/3600) + 'u geleden';
+    return Math.floor(diff/86400) + 'd geleden';
+  };
+
+  const actColors = ['rgba(0,87,184,0.12)', 'rgba(16,185,129,0.12)', 'rgba(245,158,11,0.12)', 'rgba(244,63,94,0.12)', 'rgba(99,102,241,0.12)', 'rgba(6,182,212,0.12)'];
+  const actEmojis = ['📄', '✅', '📋', '📥', '🔔', '📝'];
+
+  return `
+  <div style="animation:fadeIn 0.4s var(--ease-out) both">
+    <div class="section-header" style="margin-bottom:20px">
+      <div>
+        <h2 class="section-title">Dashboard</h2>
+        <p style="font-size:13px;color:var(--text-muted);margin-top:2px">${now.toLocaleDateString('nl-NL',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</p>
+      </div>
+      <button class="btn btn-primary" onclick="S.adminTab='forms';render()">+ Nieuw formulier</button>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-card" style="background:linear-gradient(135deg,#0B2540,#0057B8);box-shadow:0 16px 44px rgba(0,87,184,0.35)">
+        <span class="stat-card-icon">📋</span>
+        <div class="stat-number">${S.forms.length}</div>
+        <div class="stat-label">Formulieren</div>
+        <span class="stat-trend">Totaal</span>
+      </div>
+      <div class="stat-card" style="background:linear-gradient(135deg,#4338CA,#7C3AED);box-shadow:0 16px 44px rgba(124,58,237,0.32);animation-delay:0.08s">
+        <span class="stat-card-icon">👷</span>
+        <div class="stat-number">${monteurs.length}</div>
+        <div class="stat-label">Monteurs</div>
+        <span class="stat-trend">Geregistreerd</span>
+      </div>
+      <div class="stat-card" style="background:linear-gradient(135deg,#0891B2,#06B6D4);box-shadow:0 16px 44px rgba(6,182,212,0.32);animation-delay:0.14s">
+        <span class="stat-card-icon">📥</span>
+        <div class="stat-number">${submissions.length}</div>
+        <div class="stat-label">Inzendingen</div>
+        <span class="stat-trend">Totaal</span>
+      </div>
+      <div class="stat-card" style="background:linear-gradient(135deg,#059669,#10B981);box-shadow:0 16px 44px rgba(16,185,129,0.32);animation-delay:0.20s">
+        <span class="stat-card-icon">🔥</span>
+        <div class="stat-number">${todayCount}</div>
+        <div class="stat-label">Vandaag</div>
+        <span class="stat-trend">${weekCount} deze week</span>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+      <div class="card" style="padding:20px 20px 8px">
+        <div class="card-header" style="margin-bottom:12px">
+          <span class="card-title">Recente inzendingen</span>
+          <button class="btn btn-ghost btn-sm" onclick="S.adminTab='submissions';render()">Alles →</button>
+        </div>
+        ${recent.length === 0 ? `<div class="empty" style="padding:28px 0"><div class="empty-icon">📭</div><p class="empty-text" style="font-size:14px">Nog geen inzendingen</p></div>` : `
+        <div class="activity-feed">
+          ${recent.map((s,i) => {
+            const monteur = S.users.find(u => u.id === s.userId);
+            return `<div class="activity-item" style="animation-delay:${i*0.05}s">
+              <div class="activity-dot" style="background:${actColors[i%actColors.length]}">${actEmojis[i%actEmojis.length]}</div>
+              <div class="activity-text">
+                <strong style="font-weight:700">${esc(monteur?.name || s.userName || '—')}</strong>
+                <span style="color:var(--text-muted)"> — ${esc(s.formName || '—')}</span>
+              </div>
+              <div class="activity-time">${timeAgo(s.submittedAt)}</div>
+            </div>`;
+          }).join('')}
+        </div>`}
+      </div>
+
+      <div class="card" style="padding:20px">
+        <div class="card-header" style="margin-bottom:16px">
+          <span class="card-title">Snelle acties</span>
+        </div>
+        <div class="quick-actions" style="grid-template-columns:1fr;gap:8px">
+          <div class="quick-action-card" onclick="S.adminTab='forms';S.editingForm='new';S.builderState={name:'',email:'',fields:[],allowedUsers:[]};render()">
+            <div class="quick-action-icon" style="background:linear-gradient(135deg,#EAF3FF,#C7DFFA);color:var(--blue)">📋</div>
+            <div>
+              <div class="quick-action-label">Nieuw formulier</div>
+              <div style="font-size:11px;color:var(--text-muted)">Formulier aanmaken met de builder</div>
+            </div>
+          </div>
+          <div class="quick-action-card" onclick="S.adminTab='users';S.modal={type:'userForm',title:'Nieuwe monteur',user:null};render()">
+            <div class="quick-action-icon" style="background:linear-gradient(135deg,#EDE9FE,#DDD6FE);color:#7C3AED">👷</div>
+            <div>
+              <div class="quick-action-label">Monteur toevoegen</div>
+              <div style="font-size:11px;color:var(--text-muted)">Handmatig monteur aanmaken</div>
+            </div>
+          </div>
+          <div class="quick-action-card" onclick="S.adminTab='submissions';render()">
+            <div class="quick-action-icon" style="background:linear-gradient(135deg,#CFFAFE,#A5F3FC);color:#0891B2">📥</div>
+            <div>
+              <div class="quick-action-label">Inzendingen bekijken</div>
+              <div style="font-size:11px;color:var(--text-muted)">${submissions.length} inzending${submissions.length!==1?'en':''} in totaal</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function bindAdminDashboard() {
+  // Quick action cards are handled via onclick for simplicity
 }
 
 // --- ADMIN FORMS ---
@@ -2619,40 +3158,100 @@ async function loadMonteurData() {
   S.mySubmissions = submissions.sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
 }
 
+const TILE_GRADIENTS = [
+  'linear-gradient(135deg,#0B2540,#0057B8)',
+  'linear-gradient(135deg,#4338CA,#7C3AED)',
+  'linear-gradient(135deg,#0891B2,#06B6D4)',
+  'linear-gradient(135deg,#059669,#10B981)',
+  'linear-gradient(135deg,#D97706,#F59E0B)',
+  'linear-gradient(135deg,#E11D48,#F43F5E)',
+  'linear-gradient(135deg,#7C3AED,#EC4899)',
+  'linear-gradient(135deg,#0E7490,#22D3EE)',
+];
+const TILE_EMOJIS = ['📋','📝','🔧','⚙️','🏗️','🔩','📐','🛠️','📊','🔍'];
+
+function getGreeting() {
+  const h = new Date().getHours();
+  if (h < 6)  return { text: 'Goedenacht', emoji: '🌙' };
+  if (h < 12) return { text: 'Goedemorgen', emoji: '☀️' };
+  if (h < 18) return { text: 'Goedemiddag', emoji: '👋' };
+  return       { text: 'Goedenavond', emoji: '🌆' };
+}
+
 function renderMonteur() {
   if (S.fillingForm) return renderFormFill();
+  const { text: greetText, emoji: greetEmoji } = getGreeting();
+  const firstName = (S.user?.name || '').split(' ')[0];
+  const todayStr = new Date().toDateString();
+  const todayCount = (S.mySubmissions || []).filter(s => new Date(s.submittedAt).toDateString() === todayStr).length;
+
   return `
   ${renderTopNav()}
   <div class="tabs">
-    <div class="tab ${S.monteurTab==='forms'?'active':''}" data-mtab="forms">📋 Formulieren</div>
-    <div class="tab ${S.monteurTab==='history'?'active':''}" data-mtab="history">🕓 Mijn inzendingen</div>
+    <div class="tab ${S.monteurTab==='forms'?'active':''}" data-mtab="forms">🏠 Formulieren</div>
+    <div class="tab ${S.monteurTab==='history'?'active':''}" data-mtab="history">📊 Mijn inzendingen</div>
     <div class="tab ${S.monteurTab==='profile'?'active':''}" data-mtab="profile">👤 Mijn profiel</div>
   </div>
   <div class="page-content">
     ${S.success ? `<div class="alert alert-success">✓ ${S.success}</div>` : ''}
     ${S.error ? `<div class="alert alert-error">⚠ ${S.error}</div>` : ''}
+
     ${S.monteurTab === 'forms' ? `
+      <div class="greeting-hero">
+        <div class="greeting-name">${greetText}, ${esc(firstName)}!</div>
+        <div class="greeting-sub">Klaar voor vandaag? Kies een formulier om te starten.</div>
+        <div class="greeting-emoji">${greetEmoji}</div>
+        <div class="greeting-stats">
+          <div class="greeting-stat-item">
+            <div class="greeting-stat-num">${S.myForms.length}</div>
+            <div class="greeting-stat-label">Formulieren</div>
+          </div>
+          <div class="greeting-stat-item">
+            <div class="greeting-stat-num">${S.mySubmissions.length}</div>
+            <div class="greeting-stat-label">Inzendingen</div>
+          </div>
+          <div class="greeting-stat-item">
+            <div class="greeting-stat-num">${todayCount}</div>
+            <div class="greeting-stat-label">Vandaag</div>
+          </div>
+        </div>
+      </div>
       ${S.myForms.length === 0 ? `
-        <div class="empty" style="margin-top:48px">
-          <div class="empty-icon">📋</div>
-          <p class="empty-text">Geen formulieren beschikbaar</p>
+        <div class="card" style="text-align:center;padding:52px 24px">
+          <div style="font-size:56px;margin-bottom:14px;animation:floatBob 3s ease-in-out infinite">📭</div>
+          <p class="empty-text" style="font-size:18px;margin-bottom:6px">Geen formulieren beschikbaar</p>
           <p class="empty-sub">Neem contact op met je beheerder om toegang te krijgen.</p>
         </div>` : `
-      <div class="section-header"><h2 class="section-title">Mijn formulieren</h2></div>
-      <div class="form-grid">
-        ${S.myForms.map((f, fi) => `
-          <div class="form-tile" data-id="${f.id}" style="animation:popIn 0.5s var(--ease-spring) ${fi * 0.07}s both">
-            <div class="form-tile-icon">📝</div>
-            <div class="form-tile-name">${esc(f.name)}</div>
-            <div class="form-tile-fields">${(f.fields||[]).length} velden</div>
-          </div>`).join('')}
-      </div>`}` : ''}
+      <div class="form-grid" style="grid-template-columns:repeat(auto-fill,minmax(200px,1fr))">
+        ${S.myForms.map((f, fi) => {
+          const grad = TILE_GRADIENTS[fi % TILE_GRADIENTS.length];
+          const emoji = TILE_EMOJIS[fi % TILE_EMOJIS.length];
+          const fieldCount = (f.fields||[]).length;
+          return `
+          <div class="form-tile" data-id="${f.id}" style="animation:popIn 0.5s var(--ease-spring) ${fi * 0.06}s both;padding:0;text-align:left;overflow:hidden">
+            <div class="form-tile-cover" style="background:${grad};height:88px">
+              <span style="font-size:36px;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.3));position:relative;z-index:1">${emoji}</span>
+            </div>
+            <div style="padding:14px 16px 16px">
+              <div class="form-tile-name" style="font-size:14px;margin-bottom:4px;text-align:left">${esc(f.name)}</div>
+              <div class="form-tile-fields" style="text-align:left">${fieldCount} veld${fieldCount!==1?'en':''}</div>
+              <div style="margin-top:12px">
+                <span style="background:rgba(0,87,184,0.1);color:var(--blue);font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px">Invullen →</span>
+              </div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>`}
+    ` : ''}
+
     ${S.monteurTab === 'history' ? `
-      <div class="section-header"><h2 class="section-title">Mijn inzendingen</h2></div>
+      <div class="section-header"><h2 class="section-title">Mijn inzendingen</h2>
+        <span style="background:var(--blue-light);color:var(--blue);font-size:12px;font-weight:700;padding:4px 12px;border-radius:999px">${S.mySubmissions.length} totaal</span>
+      </div>
       ${S.mySubmissions.length === 0 ? `
-        <div class="empty" style="margin-top:48px">
-          <div class="empty-icon">🕓</div>
-          <p class="empty-text">Nog geen inzendingen</p>
+        <div class="card" style="text-align:center;padding:52px 24px">
+          <div style="font-size:56px;margin-bottom:14px;animation:floatBob 3s ease-in-out infinite">📭</div>
+          <p class="empty-text" style="font-size:18px;margin-bottom:6px">Nog geen inzendingen</p>
           <p class="empty-sub">Ingevulde formulieren verschijnen hier.</p>
         </div>` : `
       <div class="card" style="padding:0;overflow:hidden">
@@ -2675,7 +3274,9 @@ function renderMonteur() {
             </tbody>
           </table>
         </div>
-      </div>`}` : ''}
+      </div>`}
+    ` : ''}
+
     ${S.monteurTab === 'profile' ? renderMonteurProfile() : ''}
   </div>
   ${S.modal ? renderModal() : ''}`;
@@ -2728,6 +3329,7 @@ function renderMonteurProfile() {
 
 function bindMonteur() {
   document.getElementById('logoutBtn')?.addEventListener('click', logout);
+  bindDarkToggle();
   document.querySelectorAll('.tab[data-mtab]').forEach(t => t.addEventListener('click', () => {
     S.monteurTab = t.dataset.mtab; S.error = null; S.success = null; render();
   }));
@@ -3104,6 +3706,7 @@ function renderFormField(f) {
 }
 
 function bindMonteur2() {
+  bindDarkToggle();
   document.getElementById('backFromFill')?.addEventListener('click', () => {
     S.fillingForm = null; S.currentFieldIdx = 0; S.error = null; S.success = null; render();
   });
@@ -3306,47 +3909,136 @@ function renderSubmittedScreen() {
   const datum = now.toLocaleDateString('nl-NL', { day:'2-digit', month:'2-digit', year:'numeric' });
   const tijd = now.toLocaleTimeString('nl-NL', { hour:'2-digit', minute:'2-digit' });
   return `
+  <canvas id="confetti-canvas"></canvas>
   ${renderTopNav()}
-  <div class="page-content" style="max-width:560px;margin:0 auto;padding-top:32px;animation:popIn 0.5s var(--ease-spring) both">
-    <div style="text-align:center;margin-bottom:28px">
-      <div style="width:80px;height:80px;background:linear-gradient(135deg,#d1fae5,#ecfdf5);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:36px;margin:0 auto 16px">✅</div>
-      <h2 style="font-size:22px;font-weight:700;color:var(--text);margin-bottom:6px">Formulier verzonden!</h2>
-      <p style="color:var(--text-muted);font-size:14px">${esc(sub.formName || '')} · ${datum} om ${tijd}</p>
+  <div class="page-content" style="max-width:580px;margin:0 auto;padding-top:24px">
+    <div class="submitted-hero" style="animation:popIn 0.7s var(--ease-spring) both">
+      <div class="submitted-check">✅</div>
+      <h2 class="submitted-title">Formulier verzonden!</h2>
+      <p class="submitted-sub">${esc(sub.formName || '')} · ${datum} om ${tijd}</p>
     </div>
-    <div class="card" style="margin-bottom:20px">
-      <p class="card-title" style="margin-bottom:14px">Samenvatting van je antwoorden</p>
+
+    ${fields.length > 0 ? `
+    <div class="card" style="margin-bottom:20px;animation:slideInUp 0.5s var(--ease-out) 0.3s both">
+      <p class="card-title" style="margin-bottom:16px;display:flex;align-items:center;gap:8px">
+        <span style="background:var(--blue-light);color:var(--blue);border-radius:999px;width:26px;height:26px;display:inline-flex;align-items:center;justify-content:center;font-size:13px">📋</span>
+        Samenvatting
+      </p>
       ${fields.map(f => {
         const val = sub.values?.[f.id];
         let display = '—';
         if (Array.isArray(val)) display = val.join(', ') || '—';
         else if (val !== undefined && val !== null && val !== '') display = String(val);
-        return `<div style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--border)">
-          <div style="font-size:11px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:0.5px">${esc(f.label?.split('\n')[0] || '')}</div>
-          <div style="font-size:14px;color:var(--text);margin-top:3px">${esc(display)}</div>
+        return `<div style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border)">
+          <div style="font-size:10px;font-weight:800;color:var(--blue);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:3px">${esc(f.label?.split('\n')[0] || '')}</div>
+          <div style="font-size:14px;color:var(--text)">${esc(display)}</div>
         </div>`;
       }).join('')}
-    </div>
-    <div style="display:flex;gap:12px">
-      <button class="btn btn-primary btn-lg" id="backToFormsBtn" style="flex:1">← Terug naar formulieren</button>
+    </div>` : ''}
+
+    <div style="display:flex;gap:12px;animation:slideInUp 0.5s var(--ease-out) 0.4s both">
+      <button class="btn btn-primary btn-lg" id="backToFormsBtn" style="flex:1;font-size:15px">
+        ← Terug naar formulieren
+      </button>
     </div>
   </div>`;
 }
+
 function bindSubmittedScreen() {
   document.getElementById('logoutBtn')?.addEventListener('click', logout);
+  bindDarkToggle();
   document.getElementById('backToFormsBtn')?.addEventListener('click', () => {
     S.view = 'monteur'; S.monteurTab = 'forms'; S.lastSubmission = null; render();
   });
+  // Fire confetti!
+  requestAnimationFrame(() => launchConfetti());
+}
+
+function launchConfetti() {
+  const canvas = document.getElementById('confetti-canvas');
+  if (!canvas) return;
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  const ctx = canvas.getContext('2d');
+  const particles = [];
+  const colors = ['#0057B8','#7C3AED','#10B981','#F59E0B','#F43F5E','#06B6D4','#EC4899','#FBBF24'];
+  const shapes = ['circle','rect','triangle'];
+
+  for (let i = 0; i < 150; i++) {
+    particles.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * -canvas.height * 0.5 - 20,
+      vx: (Math.random() - 0.5) * 4,
+      vy: Math.random() * 4 + 2,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      shape: shapes[Math.floor(Math.random() * shapes.length)],
+      size: Math.random() * 10 + 4,
+      rotation: Math.random() * 360,
+      rotVel: (Math.random() - 0.5) * 8,
+      opacity: 1
+    });
+  }
+
+  let frame = 0;
+  function drawFrame() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    particles.forEach((p, i) => {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += 0.06;
+      p.vx *= 0.995;
+      p.rotation += p.rotVel;
+      if (p.y > canvas.height * 0.7) p.opacity -= 0.02;
+
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, p.opacity);
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rotation * Math.PI / 180);
+      ctx.fillStyle = p.color;
+
+      if (p.shape === 'circle') {
+        ctx.beginPath();
+        ctx.arc(0, 0, p.size / 2, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (p.shape === 'rect') {
+        ctx.fillRect(-p.size/2, -p.size/4, p.size, p.size/2);
+      } else {
+        ctx.beginPath();
+        ctx.moveTo(0, -p.size/2);
+        ctx.lineTo(p.size/2, p.size/2);
+        ctx.lineTo(-p.size/2, p.size/2);
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.restore();
+    });
+
+    frame++;
+    if (frame < 180 && particles.some(p => p.opacity > 0)) {
+      requestAnimationFrame(drawFrame);
+    } else {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+  }
+  drawFrame();
 }
 
 // ===================================================
 // SHARED COMPONENTS
 // ===================================================
 function renderTopNav() {
+  const photoUrl = S.myProfile?.photoUrl || S.user?.photoUrl || '';
+  const initials = (S.user?.name || 'U').split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
   return `
   <nav class="topnav">
     <div class="logo logo-white"><span class="crown">♛</span>aqua+</div>
-    <div class="flex items-center gap-2">
-      <span class="nav-user">${esc(S.user?.name || '')}</span>
+    <div class="flex items-center gap-1">
+      <button class="dark-toggle" id="darkToggleBtn" title="Donkere modus">${isDark ? '☀️' : '🌙'}</button>
+      <span class="nav-user" style="display:flex;align-items:center;gap:8px">
+        <div class="nav-avatar">${photoUrl ? `<img src="${photoUrl}">` : initials}</div>
+        <span style="font-size:13px;font-weight:600">${esc(S.user?.name || '')}</span>
+      </span>
       <button class="nav-logout" id="logoutBtn">Uitloggen</button>
     </div>
   </nav>`;
@@ -3394,6 +4086,10 @@ window.render = function() {
 // INIT
 // ===================================================
 async function init() {
+  // Apply saved theme
+  const savedTheme = localStorage.getItem('aq_theme') || 'light';
+  document.documentElement.setAttribute('data-theme', savedTheme);
+
   S.view = 'loading'; render();
 
   // Register service worker
