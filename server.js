@@ -242,6 +242,20 @@ app.get('/api/admin/users', authMiddleware, adminOnly, (req, res) => {
   res.json(users);
 });
 
+// Admin wijzigt rol van een gebruiker
+app.put('/api/admin/users/:id/role', authMiddleware, adminOnly, (req, res) => {
+  const { role } = req.body;
+  if (!['admin', 'monteur'].includes(role)) return res.status(400).json({ error: 'Ongeldige rol' });
+  if (req.params.id === req.user.id) return res.status(400).json({ error: 'Je kunt je eigen rol niet wijzigen' });
+  const users = readJSON('users.json');
+  const idx = users.findIndex(u => u.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: 'Gebruiker niet gevonden' });
+  users[idx].role = role;
+  writeJSON('users.json', users);
+  const { password: _, ...safeUser } = users[idx];
+  res.json(safeUser);
+});
+
 // Admin reset wachtwoord van een monteur
 app.post('/api/admin/users/:id/reset-password', authMiddleware, adminOnly, (req, res) => {
   const { password } = req.body;
