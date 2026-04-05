@@ -1207,6 +1207,9 @@ function render() {
   const app = document.getElementById('app');
   if (S.view === 'loading') { app.innerHTML = `<div class="loader-wrap"><div class="spinner"></div><p style="color:var(--blue);font-weight:600">Laden...</p></div>`; return; }
   if (S.view === 'login') { app.innerHTML = renderLogin(); bindLogin(); return; }
+  if (S.view === 'register') { app.innerHTML = renderRegister(); bindRegister(); return; }
+  if (S.view === 'forgot') { app.innerHTML = renderForgot(); bindForgot(); return; }
+  if (S.view === 'reset') { app.innerHTML = renderReset(); bindReset(); return; }
   if (S.view === 'admin') { app.innerHTML = renderAdmin(); bindAdmin(); return; }
   if (S.view === 'monteur') { app.innerHTML = renderMonteur(); bindMonteur(); return; }
 }
@@ -1241,6 +1244,10 @@ function renderLogin() {
       <button class="btn btn-primary btn-lg" id="loginBtn" style="margin-top:8px">
         ${S.loading ? '<span class="spinner" style="width:18px;height:18px;border-width:2px"></span>' : 'Inloggen'}
       </button>
+      <div style="display:flex;justify-content:space-between;margin-top:14px">
+        <a href="#" id="toForgot" style="color:var(--blue);font-size:13px">Wachtwoord vergeten?</a>
+        <a href="#" id="toRegister" style="color:var(--blue);font-size:13px">Account aanmaken</a>
+      </div>
     </div>
   </div>`;
 }
@@ -1315,6 +1322,173 @@ function bindLogin() {
     // Clean up on navigation
     card._stopTilt = () => { cancelAnimationFrame(rafId); };
   }
+
+  document.getElementById('toRegister')?.addEventListener('click', () => { S.error = null; S.view = 'register'; render(); });
+  document.getElementById('toForgot')?.addEventListener('click', () => { S.error = null; S.view = 'forgot'; render(); });
+}
+
+// ===================================================
+// REGISTRATIE
+// ===================================================
+function renderRegister() {
+  const REGIO_OPTIONS = ['Noord-Holland','Zuid-Holland','Utrecht','Gelderland','Noord-Brabant','Zeeland','Limburg','Overijssel','Groningen','Friesland','Drenthe','Flevoland'];
+  return `
+  <div class="login-wrap">
+    <div class="login-card">
+      <div class="login-logo">
+        <div class="logo"><span class="crown">♛</span>aqua+</div>
+        <p class="login-subtitle">Nieuw account aanmaken</p>
+      </div>
+      ${S.error ? `<div class="alert alert-error">⚠ ${S.error}</div>` : ''}
+      ${S.success ? `<div class="alert alert-success">✓ ${S.success}</div>` : ''}
+      <div class="form-group">
+        <label>Volledige naam</label>
+        <input class="form-control" id="regName" type="text" placeholder="Jan de Vries" autocomplete="name">
+      </div>
+      <div class="form-group">
+        <label>E-mailadres</label>
+        <input class="form-control" id="regEmail" type="email" placeholder="jan@aqua.nl" autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label>Regio</label>
+        <select class="form-control" id="regRegio">
+          <option value="">Kies je regio...</option>
+          ${REGIO_OPTIONS.map(r => `<option value="${r}">${r}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Wachtwoord <span style="font-size:11px;color:var(--text-muted)">(minimaal 6 tekens)</span></label>
+        <input class="form-control" id="regPass" type="password" placeholder="Wachtwoord" autocomplete="new-password">
+      </div>
+      <div class="form-group">
+        <label>Wachtwoord bevestigen</label>
+        <input class="form-control" id="regPass2" type="password" placeholder="Herhaal wachtwoord" autocomplete="new-password">
+      </div>
+      <button class="btn btn-primary btn-lg" id="regBtn" style="margin-top:8px">
+        ${S.loading ? '<span class="spinner" style="width:18px;height:18px;border-width:2px"></span>' : 'Account aanmaken'}
+      </button>
+      <div style="text-align:center;margin-top:16px">
+        <a href="#" id="toLogin" style="color:var(--blue);font-size:13px">Terug naar inloggen</a>
+      </div>
+    </div>
+  </div>`;
+}
+
+function bindRegister() {
+  document.getElementById('toLogin')?.addEventListener('click', e => { e.preventDefault(); S.error = null; S.success = null; S.view = 'login'; render(); });
+  document.getElementById('regBtn')?.addEventListener('click', async () => {
+    const name = document.getElementById('regName')?.value?.trim();
+    const email = document.getElementById('regEmail')?.value?.trim();
+    const regio = document.getElementById('regRegio')?.value;
+    const pass = document.getElementById('regPass')?.value;
+    const pass2 = document.getElementById('regPass2')?.value;
+    if (!name || !email || !regio || !pass) { S.error = 'Vul alle velden in'; render(); return; }
+    if (pass !== pass2) { S.error = 'Wachtwoorden komen niet overeen'; render(); return; }
+    S.loading = true; S.error = null; render();
+    try {
+      const data = await api('POST', '/api/register', { name, email, regio, password: pass });
+      S.token = data.token; S.user = data.user;
+      localStorage.setItem('aq_token', S.token);
+      localStorage.setItem('aq_user', JSON.stringify(S.user));
+      await initAfterLogin();
+    } catch(e) { S.error = e.message; S.loading = false; render(); }
+  });
+  document.getElementById('regName')?.focus();
+}
+
+// ===================================================
+// WACHTWOORD VERGETEN
+// ===================================================
+function renderForgot() {
+  return `
+  <div class="login-wrap">
+    <div class="login-card">
+      <div class="login-logo">
+        <div class="logo"><span class="crown">♛</span>aqua+</div>
+        <p class="login-subtitle">Wachtwoord vergeten</p>
+      </div>
+      ${S.error ? `<div class="alert alert-error">⚠ ${S.error}</div>` : ''}
+      ${S.success ? `<div class="alert alert-success" style="background:#ecfdf5;border-color:#6ee7b7;color:#065f46">✓ ${S.success}</div>` : ''}
+      ${!S.success ? `
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">Vul je e-mailadres in en je ontvangt een link om je wachtwoord opnieuw in te stellen.</p>
+      <div class="form-group">
+        <label>E-mailadres</label>
+        <input class="form-control" id="forgotEmail" type="email" placeholder="jan@aqua.nl" autocomplete="email">
+      </div>
+      <button class="btn btn-primary btn-lg" id="forgotBtn">
+        ${S.loading ? '<span class="spinner" style="width:18px;height:18px;border-width:2px"></span>' : 'Stuur resetlink'}
+      </button>` : ''}
+      <div style="text-align:center;margin-top:16px">
+        <a href="#" id="toLogin2" style="color:var(--blue);font-size:13px">Terug naar inloggen</a>
+      </div>
+    </div>
+  </div>`;
+}
+
+function bindForgot() {
+  document.getElementById('toLogin2')?.addEventListener('click', e => { e.preventDefault(); S.error = null; S.success = null; S.view = 'login'; render(); });
+  document.getElementById('forgotBtn')?.addEventListener('click', async () => {
+    const email = document.getElementById('forgotEmail')?.value?.trim();
+    if (!email) { S.error = 'Vul je e-mailadres in'; render(); return; }
+    S.loading = true; S.error = null; render();
+    try {
+      await api('POST', '/api/forgot-password', { email });
+      S.success = 'Als dit e-mailadres bekend is, ontvang je een resetlink.';
+      S.loading = false; render();
+    } catch(e) { S.error = e.message; S.loading = false; render(); }
+  });
+  document.getElementById('forgotEmail')?.focus();
+}
+
+// ===================================================
+// WACHTWOORD RESETTEN
+// ===================================================
+function renderReset() {
+  return `
+  <div class="login-wrap">
+    <div class="login-card">
+      <div class="login-logo">
+        <div class="logo"><span class="crown">♛</span>aqua+</div>
+        <p class="login-subtitle">Nieuw wachtwoord instellen</p>
+      </div>
+      ${S.error ? `<div class="alert alert-error">⚠ ${S.error}</div>` : ''}
+      ${S.success ? `<div class="alert alert-success" style="background:#ecfdf5;border-color:#6ee7b7;color:#065f46">✓ ${S.success}</div>` : ''}
+      ${!S.success ? `
+      <div class="form-group">
+        <label>Nieuw wachtwoord <span style="font-size:11px;color:var(--text-muted)">(minimaal 6 tekens)</span></label>
+        <input class="form-control" id="resetPass" type="password" placeholder="Nieuw wachtwoord" autocomplete="new-password">
+      </div>
+      <div class="form-group">
+        <label>Wachtwoord bevestigen</label>
+        <input class="form-control" id="resetPass2" type="password" placeholder="Herhaal wachtwoord" autocomplete="new-password">
+      </div>
+      <button class="btn btn-primary btn-lg" id="resetBtn">
+        ${S.loading ? '<span class="spinner" style="width:18px;height:18px;border-width:2px"></span>' : 'Wachtwoord opslaan'}
+      </button>` : `
+      <div style="text-align:center;margin-top:8px">
+        <a href="#" id="toLogin3" style="color:var(--blue);font-size:13px">Naar inloggen</a>
+      </div>`}
+    </div>
+  </div>`;
+}
+
+function bindReset() {
+  document.getElementById('toLogin3')?.addEventListener('click', e => { e.preventDefault(); S.error = null; S.success = null; S.view = 'login'; render(); });
+  document.getElementById('resetBtn')?.addEventListener('click', async () => {
+    const pass = document.getElementById('resetPass')?.value;
+    const pass2 = document.getElementById('resetPass2')?.value;
+    if (!pass || !pass2) { S.error = 'Vul beide velden in'; render(); return; }
+    if (pass !== pass2) { S.error = 'Wachtwoorden komen niet overeen'; render(); return; }
+    S.loading = true; S.error = null; render();
+    try {
+      await api('POST', '/api/reset-password', { token: S.resetToken, password: pass });
+      S.success = 'Wachtwoord gewijzigd! Je kunt nu inloggen.';
+      S.resetToken = null; S.loading = false;
+      history.replaceState({}, '', '/');
+      render();
+    } catch(e) { S.error = e.message; S.loading = false; render(); }
+  });
+  document.getElementById('resetPass')?.focus();
 }
 
 async function initAfterLogin() {
@@ -2893,6 +3067,16 @@ async function init() {
   // Register service worker
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js').catch(e => console.warn('SW fout:', e));
+  }
+
+  // Wachtwoord reset link detecteren (?reset=TOKEN in URL)
+  const urlParams = new URLSearchParams(window.location.search);
+  const resetToken = urlParams.get('reset');
+  if (resetToken) {
+    S.resetToken = resetToken;
+    S.view = 'reset';
+    render();
+    return;
   }
 
   if (S.token && S.user) {

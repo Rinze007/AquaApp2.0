@@ -126,6 +126,77 @@ app.post('/api/login', (req, res) => {
 
 app.get('/api/me', authMiddleware, (req, res) => res.json(req.user));
 
+// ===== REGISTRATIE =====
+app.post('/api/register', (req, res) => {
+  const { name, email, regio, password } = req.body;
+  if (!name || !email || !regio || !password) return res.status(400).json({ error: 'Vul alle velden in' });
+  if (password.length < 6) return res.status(400).json({ error: 'Wachtwoord moet minimaal 6 tekens zijn' });
+  const users = readJSON('users.json');
+  if (users.find(u => u.username === email)) return res.status(400).json({ error: 'Dit e-mailadres is al geregistreerd' });
+  const newUser = {
+    id: uuidv4(),
+    username: email,
+    password: bcrypt.hashSync(password, 10),
+    name, email, regio,
+    role: 'monteur',
+    allowedForms: []
+  };
+  users.push(newUser);
+  writeJSON('users.json', users);
+  const token = jwt.sign(
+    { id: newUser.id, username: newUser.username, role: newUser.role, name: newUser.name },
+    JWT_SECRET,
+    { expiresIn: '7d' }
+  );
+  res.json({ token, user: { id: newUser.id, username: newUser.username, role: newUser.role, name: newUser.name } });
+});
+
+// ===== WACHTWOORD VERGETEN =====
+const resetTokens = {}; // { token: { userId, expires } }
+
+app.post('/api/forgot-password', async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ error: 'Vul een e-mailadres in' });
+  const users = readJSON('users.json');
+  const user = users.find(u => u.username === email || u.email === email);
+  // Altijd succes teruggeven (geen enumeration)
+  if (!user) return res.json({ ok: true });
+
+  const token = uuidv4();
+  resetTokens[token] = { userId: user.id, expires: Date.now() + 1000 * 60 * 60 }; // 1 uur geldig
+
+  const resetUrl = `${req.protocol}://${req.get('host')}/?reset=${token}`;
+
+  try {
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    await resend.emails.send({
+      from: 'AquaApp <noreply@aquaapp.nl>',
+      to: user.email || user.username,
+      subject: 'Wachtwoord opnieuw instellen – AquaApp',
+      text: `Hallo ${user.name},\n\nKlik op de onderstaande link om je wachtwoord opnieuw in te stellen:\n\n${resetUrl}\n\nDeze link is 1 uur geldig.\n\n— AquaApp`
+    });
+  } catch (e) {
+    console.error('Reset mail fout:', e);
+  }
+  res.json({ ok: true });
+});
+
+app.post('/api/reset-password', (req, res) => {
+  const { token, password } = req.body;
+  if (!token || !password) return res.status(400).json({ error: 'Ongeldig verzoek' });
+  if (password.length < 6) return res.status(400).json({ error: 'Wachtwoord moet minimaal 6 tekens zijn' });
+  const entry = resetTokens[token];
+  if (!entry || Date.now() > entry.expires) return res.status(400).json({ error: 'Link is verlopen of ongeldig' });
+
+  const users = readJSON('users.json');
+  const idx = users.findIndex(u => u.id === entry.userId);
+  if (idx === -1) return res.status(404).json({ error: 'Gebruiker niet gevonden' });
+  users[idx].password = bcrypt.hashSync(password, 10);
+  writeJSON('users.json', users);
+  delete resetTokens[token];
+  res.json({ ok: true });
+});
+
 // ===== ADMIN - USERS =====
 app.get('/api/admin/users', authMiddleware, adminOnly, (req, res) => {
   const users = readJSON('users.json').map(u => { const { password, ...rest } = u; return rest; });
