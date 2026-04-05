@@ -144,6 +144,24 @@ app.post('/api/register', (req, res) => {
   };
   users.push(newUser);
   writeJSON('users.json', users);
+
+  // Stuur notificatiemail naar admin(s)
+  if (process.env.RESEND_API_KEY) {
+    try {
+      const adminUsers = users.filter(u => u.role === 'admin' && (u.email || u.username));
+      const adminEmails = adminUsers.map(u => u.email || u.username);
+      if (adminEmails.length > 0) {
+        const resend = new Resend(process.env.RESEND_API_KEY);
+        await resend.emails.send({
+          from: 'AquaApp <onboarding@resend.dev>',
+          to: adminEmails,
+          subject: `Nieuwe monteur geregistreerd: ${name}`,
+          text: `Hallo,\n\nEen nieuwe monteur heeft zich geregistreerd:\n\nNaam: ${name}\nE-mail: ${email}\nRegio: ${regio}\n\nLog in op AquaApp om toegang te verlenen tot formulieren.\n\n— AquaApp`
+        });
+      }
+    } catch(e) { console.error('Registratie notificatie fout:', e); }
+  }
+
   const token = jwt.sign(
     { id: newUser.id, username: newUser.username, role: newUser.role, name: newUser.name },
     JWT_SECRET,
@@ -509,9 +527,10 @@ async function sendEmail(form, formData, photos, signature, user) {
     attachments.push({ filename: 'handtekening.png', content: base64Data });
   }
 
+  const recipients = (form.email || '').split(',').map(e => e.trim()).filter(Boolean);
   const { error } = await resend.emails.send({
     from: 'AquaApp <onboarding@resend.dev>',
-    to: form.email,
+    to: recipients.length > 0 ? recipients : [form.email],
     subject: `[AquaApp] ${form.name} — ${user.name} — ${datumStr}`,
     text,
     attachments

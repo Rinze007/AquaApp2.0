@@ -1162,7 +1162,7 @@ let S = {
   view: 'loading',
   adminTab: 'forms',
   // Admin data
-  forms: [], users: [], lists: [],
+  forms: [], users: [], lists: [], allSubmissions: [],
   // Form builder
   editingForm: null,
   builderState: null,
@@ -1212,6 +1212,7 @@ function render() {
   if (S.view === 'reset') { app.innerHTML = renderReset(); bindReset(); return; }
   if (S.view === 'admin') { app.innerHTML = renderAdmin(); bindAdmin(); return; }
   if (S.view === 'monteur') { app.innerHTML = renderMonteur(); bindMonteur(); return; }
+  if (S.view === 'submitted') { app.innerHTML = renderSubmittedScreen(); bindSubmittedScreen(); return; }
 }
 
 // ===================================================
@@ -1507,11 +1508,13 @@ async function initAfterLogin() {
 // ADMIN
 // ===================================================
 async function loadAdminData() {
-  const [forms, users, lists] = await Promise.all([
+  const [forms, users, lists, submissions] = await Promise.all([
     api('GET', '/api/admin/forms'),
     api('GET', '/api/admin/users'),
-    api('GET', '/api/admin/lists')
+    api('GET', '/api/admin/lists'),
+    api('GET', '/api/submissions').catch(() => [])
   ]);
+  S.allSubmissions = submissions.sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
   S.forms = forms; S.users = users; S.lists = lists;
 }
 
@@ -1522,6 +1525,7 @@ function renderAdmin() {
   <div class="tabs">
     <div class="tab ${S.adminTab==='forms'?'active':''}" data-tab="forms">📋 Formulieren</div>
     <div class="tab ${S.adminTab==='users'?'active':''}" data-tab="users">👤 Gebruikers</div>
+    <div class="tab ${S.adminTab==='submissions'?'active':''}" data-tab="submissions">📥 Inzendingen ${S.allSubmissions?.length > 0 ? `<span style="background:var(--blue);color:white;border-radius:999px;padding:1px 7px;font-size:11px;margin-left:4px">${S.allSubmissions.length}</span>` : ''}</div>
     <div class="tab ${S.adminTab==='lists'?'active':''}" data-tab="lists">📂 Lijsten</div>
   </div>
   <div class="page-content" style="animation:fadeIn 0.4s var(--ease-out) both">
@@ -1529,6 +1533,7 @@ function renderAdmin() {
     ${S.success ? `<div class="alert alert-success" style="animation:slideInUp 0.4s ease">✓ ${S.success}</div>` : ''}
     ${S.adminTab === 'forms' ? renderAdminForms() : ''}
     ${S.adminTab === 'users' ? renderAdminUsers() : ''}
+    ${S.adminTab === 'submissions' ? renderAdminSubmissions() : ''}
     ${S.adminTab === 'lists' ? renderAdminLists() : ''}
   </div>
   ${S.modal ? renderModal() : ''}`;
@@ -1545,6 +1550,7 @@ function bindAdmin() {
 
   if (S.adminTab === 'forms') bindAdminForms();
   if (S.adminTab === 'users') bindAdminUsers();
+  if (S.adminTab === 'submissions') bindAdminSubmissions();
   if (S.adminTab === 'lists') bindAdminLists();
   if (S.modal) bindModal();
 }
@@ -1577,6 +1583,7 @@ function renderAdminForms() {
             <td>
               <div class="flex gap-1">
                 <button class="btn btn-ghost btn-sm edit-form-btn" data-id="${f.id}">✏️ Bewerk</button>
+                <button class="btn btn-ghost btn-sm dup-form-btn" data-id="${f.id}" title="Dupliceren">⧉</button>
                 <button class="btn btn-danger btn-sm del-form-btn" data-id="${f.id}" data-name="${esc(f.name)}">🗑</button>
               </div>
             </td>
@@ -1606,6 +1613,14 @@ function bindAdminForms() {
       allowedUsers: S.users.filter(u => u.allowedForms?.includes(form.id)).map(u => u.id)
     };
     render();
+  }));
+  document.querySelectorAll('.dup-form-btn').forEach(b => b.addEventListener('click', async () => {
+    const form = S.forms.find(f => f.id === b.dataset.id);
+    if (!form) return;
+    const newFields = JSON.parse(JSON.stringify(form.fields || [])).map(f => ({ ...f, id: 'f_' + Date.now() + '_' + Math.random().toString(36).substr(2,5) }));
+    const newForm = await api('POST', '/api/admin/forms', { name: form.name + ' (kopie)', email: form.email, fields: newFields, conditions: form.conditions || [] });
+    S.forms.push(newForm);
+    S.success = `Formulier gedupliceerd als "${newForm.name}"`; render();
   }));
   document.querySelectorAll('.del-form-btn').forEach(b => b.addEventListener('click', () => {
     S.modal = { type: 'confirm', title: 'Formulier verwijderen', message: `Weet je zeker dat je <strong>${b.dataset.name}</strong> wilt verwijderen?`, action: 'deleteForm', id: b.dataset.id };
@@ -1697,8 +1712,8 @@ function renderFormBuilder() {
             <input class="form-control" id="bs_name" type="text" placeholder="bijv. Onderhoudsrapport" value="${esc(bs.name)}">
           </div>
           <div class="form-group" style="flex:1;min-width:200px">
-            <label>Bestemming e-mailadres *</label>
-            <input class="form-control" id="bs_email" type="email" placeholder="ontvanger@bedrijf.nl" value="${esc(bs.email)}">
+            <label>Bestemming e-mailadres(sen) * <span style="font-weight:400;font-size:11px;color:var(--text-muted)">(meerdere: kommagescheiden)</span></label>
+            <input class="form-control" id="bs_email" type="text" placeholder="info@bedrijf.nl, admin@bedrijf.nl" value="${esc(bs.email)}">
           </div>
         </div>
         <div class="form-group" style="margin-bottom:0">
@@ -1926,6 +1941,7 @@ function renderFieldCard(f, i, labels) {
       <div class="flex gap-1">
         ${i > 0 ? `<button class="btn btn-ghost btn-sm move-up-btn" data-idx="${i}">↑</button>` : ''}
         ${i < (S.builderState.fields.length-1) ? `<button class="btn btn-ghost btn-sm move-down-btn" data-idx="${i}">↓</button>` : ''}
+        <button class="btn btn-ghost btn-sm dup-field-btn" data-idx="${i}" title="Kopieer veld">⧉</button>
         <button class="btn btn-danger btn-sm del-field-btn" data-idx="${i}">🗑</button>
       </div>
     </div>
@@ -2048,6 +2064,13 @@ function bindFormBuilder() {
   // ─────────────────────────────────────────────────────────────
 
   // Field controls
+  document.querySelectorAll('.dup-field-btn').forEach(b => b.addEventListener('click', () => {
+    const i = parseInt(b.dataset.idx);
+    const copy = JSON.parse(JSON.stringify(S.builderState.fields[i]));
+    copy.id = 'f_' + Date.now() + '_' + Math.random().toString(36).substr(2,5);
+    S.builderState.fields.splice(i + 1, 0, copy);
+    render();
+  }));
   document.querySelectorAll('.del-field-btn').forEach(b => b.addEventListener('click', () => {
     S.builderState.fields.splice(parseInt(b.dataset.idx), 1); render();
   }));
@@ -2161,6 +2184,64 @@ async function saveForm() {
   } catch(e) { S.error = e.message; S.loading = false; render(); }
 }
 
+// --- ADMIN SUBMISSIONS ---
+function renderAdminSubmissions() {
+  const subs = S.allSubmissions || [];
+  const [filterForm, setFilterForm] = [S.subFilterForm || '', v => S.subFilterForm = v];
+  const [filterUser, setFilterUser] = [S.subFilterUser || '', v => S.subFilterUser = v];
+  const forms = S.forms;
+  const users = S.users.filter(u => u.role !== 'admin');
+
+  const filtered = subs.filter(s => {
+    if (filterForm && s.formId !== filterForm) return false;
+    if (filterUser && s.userId !== filterUser) return false;
+    return true;
+  });
+
+  return `
+  <div class="section-header">
+    <h2 class="section-title">Inzendingen <span style="font-size:13px;font-weight:400;color:var(--text-muted)">${filtered.length} van ${subs.length}</span></h2>
+  </div>
+  <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+    <select class="form-control" id="subFilterForm" style="max-width:220px;padding:8px 12px">
+      <option value="">Alle formulieren</option>
+      ${forms.map(f => `<option value="${f.id}" ${filterForm===f.id?'selected':''}>${esc(f.name)}</option>`).join('')}
+    </select>
+    <select class="form-control" id="subFilterUser" style="max-width:220px;padding:8px 12px">
+      <option value="">Alle monteurs</option>
+      ${users.map(u => `<option value="${u.id}" ${filterUser===u.id?'selected':''}>${esc(u.name)}</option>`).join('')}
+    </select>
+    ${filterForm || filterUser ? `<button class="btn btn-ghost btn-sm" id="clearSubFilter" style="align-self:center">✕ Wis filter</button>` : ''}
+  </div>
+  ${filtered.length === 0 ? `
+    <div class="empty"><div class="empty-icon">📥</div>
+    <p class="empty-text">Geen inzendingen gevonden</p></div>` : `
+  <div class="card" style="padding:0;overflow:hidden">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Formulier</th><th>Monteur</th><th>Datum</th><th>Tijd</th><th>Foto's</th><th>Handtekening</th><th></th></tr></thead>
+        <tbody>
+          ${filtered.map(s => {
+            const d = new Date(s.submittedAt);
+            const datum = d.toLocaleDateString('nl-NL', { day:'2-digit', month:'2-digit', year:'numeric' });
+            const tijd = d.toLocaleTimeString('nl-NL', { hour:'2-digit', minute:'2-digit' });
+            const monteur = users.find(u => u.id === s.userId);
+            return `<tr class="admin-sub-row" data-sid="${s.id}" style="cursor:pointer">
+              <td><strong>${esc(s.formName || '—')}</strong></td>
+              <td>${esc(monteur?.name || s.userName || '—')}</td>
+              <td class="text-sm">${datum}</td>
+              <td class="text-sm text-muted">${tijd}</td>
+              <td>${s.photoCount > 0 ? `<span class="badge badge-blue">📷 ${s.photoCount}</span>` : '<span class="text-muted text-sm">—</span>'}</td>
+              <td>${s.hasSignature ? '<span class="badge badge-blue">✓</span>' : '<span class="text-muted text-sm">—</span>'}</td>
+              <td><button class="btn btn-ghost btn-sm admin-sub-detail-btn" data-sid="${s.id}">🔍 Bekijk</button></td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  </div>`}`;
+}
+
 // --- ADMIN USERS ---
 function renderAdminUsers() {
   const monteurs = S.users.filter(u => u.role !== 'admin');
@@ -2245,6 +2326,47 @@ function bindAdminUsers() {
   }));
   document.querySelectorAll('.del-user-btn').forEach(b => b.addEventListener('click', () => {
     S.modal = { type: 'confirm', title: 'Monteur verwijderen', message: `Weet je zeker dat je <strong>${b.dataset.name}</strong> wilt verwijderen?`, action: 'deleteUser', id: b.dataset.id };
+    render();
+  }));
+}
+
+function bindAdminSubmissions() {
+  document.getElementById('subFilterForm')?.addEventListener('change', e => {
+    S.subFilterForm = e.target.value; render();
+  });
+  document.getElementById('subFilterUser')?.addEventListener('change', e => {
+    S.subFilterUser = e.target.value; render();
+  });
+  document.getElementById('clearSubFilter')?.addEventListener('click', () => {
+    S.subFilterForm = ''; S.subFilterUser = ''; render();
+  });
+  document.querySelectorAll('.admin-sub-detail-btn').forEach(b => b.addEventListener('click', e => {
+    e.stopPropagation();
+    const s = (S.allSubmissions || []).find(x => x.id === b.dataset.sid);
+    if (!s) return;
+    const form = S.forms.find(f => f.id === s.formId);
+    const fields = form?.fields || [];
+    const monteur = S.users.find(u => u.id === s.userId);
+    const d = new Date(s.submittedAt);
+    const datum = d.toLocaleDateString('nl-NL', { day:'2-digit', month:'2-digit', year:'numeric' });
+    const tijd = d.toLocaleTimeString('nl-NL', { hour:'2-digit', minute:'2-digit' });
+    let details = `<div style="display:flex;gap:16px;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border)">
+      <div><div style="font-size:10px;font-weight:700;color:var(--blue);text-transform:uppercase">Monteur</div><div style="font-size:14px">${esc(monteur?.name || s.userName || '—')}</div></div>
+      <div><div style="font-size:10px;font-weight:700;color:var(--blue);text-transform:uppercase">Datum</div><div style="font-size:14px">${datum} om ${tijd}</div></div>
+    </div>`;
+    details += fields.filter(f => !['photo','signature','heading','divider'].includes(f.type)).map(f => {
+      const val = s.data?.[f.id];
+      let display = '—';
+      if (f.type === 'checkbox' && Array.isArray(val)) display = val.join(', ') || '—';
+      else if (val !== undefined && val !== null && val !== '') display = String(val);
+      return `<div style="margin-bottom:10px">
+        <div style="font-size:11px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:0.5px">${esc(f.label?.split('\n')[0] || '')}</div>
+        <div style="font-size:14px;padding:6px 0;border-bottom:1px solid var(--border)">${esc(display)}</div>
+      </div>`;
+    }).join('');
+    if (s.photoCount > 0) details += `<div style="margin-top:8px"><span class="badge badge-blue">📷 ${s.photoCount} foto('s) meegestuurd</span></div>`;
+    if (s.hasSignature) details += `<div style="margin-top:6px"><span class="badge badge-blue">✓ Handtekening meegestuurd</span></div>`;
+    S.modal = { type: 'submissionDetail', title: s.formName || 'Inzending', content: details };
     render();
   }));
 }
@@ -2670,7 +2792,10 @@ function bindMonteur() {
     if (!form) return;
     S.fillingForm = form;
     S.currentFieldIdx = 0;
-    S.formValues = {};
+    // Herstel concept indien aanwezig
+    const draft = loadDraft(form.id);
+    S.formValues = draft?.values || {};
+    S.currentFieldIdx = draft?.idx || 0;
     S.signatureData = null;
     S.photoFiles = [];
     S.error = null; S.success = null;
@@ -2687,6 +2812,17 @@ function bindMonteur() {
 }
 
 // --- FORM FILL ---
+// ===== CONCEPT (DRAFT) OPSLAAN =====
+function saveDraft(formId, values, idx) {
+  try { localStorage.setItem('aq_draft_' + formId, JSON.stringify({ values, idx, savedAt: Date.now() })); } catch {}
+}
+function loadDraft(formId) {
+  try { const d = localStorage.getItem('aq_draft_' + formId); return d ? JSON.parse(d) : null; } catch { return null; }
+}
+function clearDraft(formId) {
+  try { localStorage.removeItem('aq_draft_' + formId); } catch {}
+}
+
 function fieldHasValue(f) {
   if (f.type === 'heading' || f.type === 'divider') return true;
   const val = S.formValues[f.id];
@@ -3000,9 +3136,15 @@ function bindMonteur2() {
     }
   };
 
+  // Auto-save draft helper
+  const autosave = () => {
+    if (S.fillingForm) saveDraft(S.fillingForm.id, S.formValues, S.currentFieldIdx);
+  };
+
   // Text/date/email/etc
   document.querySelectorAll('.fill-input').forEach(el => el.addEventListener('input', e => {
     S.formValues[e.target.dataset.id] = e.target.value;
+    autosave();
     // Update next button state without full re-render
     const nextBtn = document.getElementById('nextFieldBtn');
     if (nextBtn) {
@@ -3013,13 +3155,14 @@ function bindMonteur2() {
   }));
   // Radio
   document.querySelectorAll('.fill-radio').forEach(el => el.addEventListener('change', e => {
-    if (e.target.checked) { S.formValues[e.target.dataset.id] = e.target.value; autoNext(); }
+    if (e.target.checked) { S.formValues[e.target.dataset.id] = e.target.value; autosave(); autoNext(); }
   }));
   // Checkbox
   document.querySelectorAll('.fill-checkbox').forEach(el => el.addEventListener('change', () => {
     const id = el.dataset.id;
     const checked = Array.from(document.querySelectorAll(`.fill-checkbox[data-id="${id}"]:checked`)).map(c => c.value);
     S.formValues[id] = checked;
+    autosave();
   }));
 
   // Dropdown lists
@@ -3143,11 +3286,56 @@ async function submitForm() {
     S.photoFiles.forEach((f, i) => fd.append('photos', f, f.name || `foto_${i}.jpg`));
 
     const result = await api('POST', `/api/submit/${form.id}`, fd, true);
-    S.loading = false; S.fillingForm = null;
+    clearDraft(form.id);
+    S.loading = false;
+    S.view = 'submitted';
+    S.lastSubmission = { formName: form.name, values: { ...S.formValues }, fields: form.fields || [] };
+    S.fillingForm = null;
     S.formValues = {}; S.signatureData = null; S.photoFiles = [];
-    S.success = result.message || 'Formulier succesvol verzonden!';
     render();
   } catch(e) { S.error = e.message; S.loading = false; render(); }
+}
+
+// ===================================================
+// BEVESTIGINGSSCHERM
+// ===================================================
+function renderSubmittedScreen() {
+  const sub = S.lastSubmission || {};
+  const fields = (sub.fields || []).filter(f => !['photo','signature','heading','divider'].includes(f.type));
+  const now = new Date();
+  const datum = now.toLocaleDateString('nl-NL', { day:'2-digit', month:'2-digit', year:'numeric' });
+  const tijd = now.toLocaleTimeString('nl-NL', { hour:'2-digit', minute:'2-digit' });
+  return `
+  ${renderTopNav()}
+  <div class="page-content" style="max-width:560px;margin:0 auto;padding-top:32px;animation:popIn 0.5s var(--ease-spring) both">
+    <div style="text-align:center;margin-bottom:28px">
+      <div style="width:80px;height:80px;background:linear-gradient(135deg,#d1fae5,#ecfdf5);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:36px;margin:0 auto 16px">✅</div>
+      <h2 style="font-size:22px;font-weight:700;color:var(--text);margin-bottom:6px">Formulier verzonden!</h2>
+      <p style="color:var(--text-muted);font-size:14px">${esc(sub.formName || '')} · ${datum} om ${tijd}</p>
+    </div>
+    <div class="card" style="margin-bottom:20px">
+      <p class="card-title" style="margin-bottom:14px">Samenvatting van je antwoorden</p>
+      ${fields.map(f => {
+        const val = sub.values?.[f.id];
+        let display = '—';
+        if (Array.isArray(val)) display = val.join(', ') || '—';
+        else if (val !== undefined && val !== null && val !== '') display = String(val);
+        return `<div style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--border)">
+          <div style="font-size:11px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:0.5px">${esc(f.label?.split('\n')[0] || '')}</div>
+          <div style="font-size:14px;color:var(--text);margin-top:3px">${esc(display)}</div>
+        </div>`;
+      }).join('')}
+    </div>
+    <div style="display:flex;gap:12px">
+      <button class="btn btn-primary btn-lg" id="backToFormsBtn" style="flex:1">← Terug naar formulieren</button>
+    </div>
+  </div>`;
+}
+function bindSubmittedScreen() {
+  document.getElementById('logoutBtn')?.addEventListener('click', logout);
+  document.getElementById('backToFormsBtn')?.addEventListener('click', () => {
+    S.view = 'monteur'; S.monteurTab = 'forms'; S.lastSubmission = null; render();
+  });
 }
 
 // ===================================================
