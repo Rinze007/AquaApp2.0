@@ -132,6 +132,76 @@ if (!fs.existsSync(path.join(dataDir, 'forms.json'))) {
 }
 if (!fs.existsSync(path.join(dataDir, 'lists.json'))) writeJSON('lists.json', []);
 
+// ===== STARTUP MIGRATIE — zorg dat Admin/Davy altijd bestaan =====
+(function runMigrations() {
+  const hash1 = bcrypt.hashSync('1', 10);
+  let users = readJSON('users.json');
+  let changed = false;
+
+  if (!users.find(u => u.username === 'Admin')) {
+    users.push({ id: uuidv4(), username: 'Admin', password: hash1, name: 'Beheerder', role: 'admin', photoUrl: null, allowedForms: [] });
+    changed = true;
+    console.log('[migratie] Admin-account aangemaakt.');
+  }
+
+  let davy = users.find(u => u.username === 'Davy');
+  if (!davy) {
+    davy = { id: uuidv4(), username: 'Davy', password: hash1, name: 'Davy Jansen', role: 'monteur', photoUrl: null, allowedForms: [demoFormId] };
+    users.push(davy);
+    changed = true;
+    console.log('[migratie] Davy-account aangemaakt.');
+  } else if (!davy.allowedForms.includes(demoFormId)) {
+    davy.allowedForms.push(demoFormId);
+    changed = true;
+    console.log('[migratie] Demo formulier gekoppeld aan Davy.');
+  }
+
+  if (changed) writeJSON('users.json', users);
+
+  const forms = readJSON('forms.json');
+  if (!forms.find(f => f.id === demoFormId)) {
+    writeJSON('forms.json', [...forms, {
+      id: demoFormId,
+      name: 'Demo Formulier — Alle Veldtypes',
+      email: 'r.zijlstra@aqua.nl',
+      mode: 'classic',
+      createdAt: new Date().toISOString(),
+      conditions: [
+        { id: 'c1', ifFieldId: 'f_naam',  operator: 'empty',     value: '', action: 'hide',      thenFieldId: 'f_email2',    warningText: '', setValue: '' },
+        { id: 'c2', ifFieldId: 'f_naam',  operator: 'not_empty', value: '', action: 'required',  thenFieldId: 'f_tel',       warningText: '', setValue: '' },
+        { id: 'c3', ifFieldId: 'f_multi', operator: 'equals',    value: 'Optie C', action: 'warning',   thenFieldId: 'f_opmerk',    warningText: 'Let op: Optie C vereist extra toelichting!', setValue: '' },
+        { id: 'c4', ifFieldId: 'f_multi', operator: 'equals',    value: 'Optie A', action: 'set_value', thenFieldId: 'f_autoveld',  warningText: '', setValue: 'Automatisch ingevuld via conditie' },
+        { id: 'c5', ifFieldId: 'f_multi', operator: 'equals',    value: 'Optie B', action: 'show',      thenFieldId: 'f_extraveld', warningText: '', setValue: '' },
+        { id: 'c6', ifFieldId: 'f_multi', operator: 'equals',    value: 'Optie C', action: 'show',      thenFieldId: 'f_extraveld', warningText: '', setValue: '' },
+      ],
+      fields: [
+        { id: 'f_kop1',      type: 'heading',     label: 'Contactgegevens\nVul hieronder je naam en contactgegevens in.', required: false, options: [] },
+        { id: 'f_naam',      type: 'text',        label: 'Naam',                 required: true,  options: [] },
+        { id: 'f_email2',    type: 'email',       label: 'E-mailadres',          required: false, options: [] },
+        { id: 'f_tel',       type: 'phone',       label: 'Telefoonnummer',       required: false, options: [] },
+        { id: 'f_div1',      type: 'divider',     label: '', required: false, options: [] },
+        { id: 'f_kop2',      type: 'heading',     label: 'Datum & Getal',        required: false, options: [] },
+        { id: 'f_datum',     type: 'date',        label: 'Datum van uitvoering', required: true,  options: [] },
+        { id: 'f_num',       type: 'number',      label: 'Aantal eenheden',      required: false, options: [] },
+        { id: 'f_div2',      type: 'divider',     label: '', required: false, options: [] },
+        { id: 'f_kop3',      type: 'heading',     label: 'Keuze & Selectie',     required: false, options: [] },
+        { id: 'f_multi',     type: 'multiselect', label: 'Enkelvoudige keuze (radio)', required: true, options: ['Optie A','Optie B','Optie C','Optie D'] },
+        { id: 'f_check',     type: 'checkbox',    label: 'Meerdere keuzes (checkbox)', required: false, options: ['Punt 1','Punt 2','Punt 3','Punt 4'] },
+        { id: 'f_opmerk',    type: 'textarea',    label: 'Opmerkingen',          required: false, options: [] },
+        { id: 'f_div3',      type: 'divider',     label: '', required: false, options: [] },
+        { id: 'f_kop4',      type: 'heading',     label: 'Conditionele velden',  required: false, options: [] },
+        { id: 'f_extraveld', type: 'text',        label: 'Extra toelichting (zichtbaar bij Optie B of C)', required: false, options: [] },
+        { id: 'f_autoveld',  type: 'text',        label: 'Automatisch veld (ingevuld bij Optie A)',        required: false, options: [] },
+        { id: 'f_div4',      type: 'divider',     label: '', required: false, options: [] },
+        { id: 'f_kop5',      type: 'heading',     label: 'Foto & Handtekening',  required: false, options: [] },
+        { id: 'f_foto',      type: 'photo',       label: "Situatiefoto's",       required: false, options: [] },
+        { id: 'f_sig',       type: 'signature',   label: 'Handtekening klant',   required: false, options: [] },
+      ]
+    }]);
+    console.log('[migratie] Demo formulier aangemaakt.');
+  }
+})();
+
 // ===== RATE LIMITING (login) =====
 const loginAttempts = new Map();
 function checkRateLimit(ip) {
