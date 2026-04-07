@@ -2943,13 +2943,8 @@ function renderConditionsEditor() {
   const conditions = bs.conditions || [];
   // Only fields that can act as trigger (have a label, not divider)
   const triggerFields = bs.fields.filter(f => f.type !== 'divider' && f.type !== 'heading' && f.label);
-  // All fields that can be shown/hidden (not divider)
+  // All fields that can be targets (not divider)
   const targetFields  = bs.fields.filter(f => f.type !== 'divider' && f.label);
-
-  const fieldLabel = (id) => {
-    const f = bs.fields.find(x => x.id === id);
-    return f ? esc(f.label.split('\n')[0]) : `(veld ${id})`;
-  };
 
   const operators = [
     { v: 'equals',     l: 'is gelijk aan' },
@@ -2959,55 +2954,77 @@ function renderConditionsEditor() {
     { v: 'empty',      l: 'is leeg' },
   ];
 
+  const actions = [
+    { v: 'show',      l: '→ Toon veld',         color: '#0057B8' },
+    { v: 'hide',      l: '→ Verberg veld',       color: '#DC2626' },
+    { v: 'required',  l: '→ Maak verplicht',     color: '#D97706' },
+    { v: 'optional',  l: '→ Maak optioneel',     color: '#059669' },
+    { v: 'warning',   l: '→ Toon waarschuwing',  color: '#EA580C' },
+    { v: 'set_value', l: '→ Stel waarde in',     color: '#7C3AED' },
+  ];
+
   return `
   <div style="background:#FFF8E7;border-bottom:2px solid #F0C040;padding:20px 24px;animation:slideInUp 0.3s ease">
-    <div style="max-width:900px;margin:0 auto">
+    <div style="max-width:960px;margin:0 auto">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
         <div>
-          <div style="font-size:17px;font-weight:900;color:#92400E">⚡ Voorwaarden</div>
-          <div style="font-size:13px;color:#B45309;margin-top:2px">Bepaal welke velden zichtbaar worden op basis van antwoorden.</div>
+          <div style="font-size:17px;font-weight:900;color:#92400E">⚡ Voorwaarden &amp; Regels</div>
+          <div style="font-size:13px;color:#B45309;margin-top:2px">Pas het formulier dynamisch aan op basis van antwoorden.</div>
         </div>
         <button class="btn btn-ghost btn-sm" id="closeConditionsBtn">✕ Sluiten</button>
       </div>
 
       ${conditions.length === 0 ? `
       <div style="text-align:center;padding:20px;color:#B45309;font-size:13px;background:rgba(255,255,255,0.6);border-radius:12px;border:1px dashed #F0C040">
-        Nog geen voorwaarden. Klik op "Regel toevoegen" om te beginnen.
+        Nog geen regels. Klik op "Regel toevoegen" om te beginnen.
       </div>` : `
       <div style="display:flex;flex-direction:column;gap:10px">
         ${conditions.map((c, ci) => {
           const ifField = bs.fields.find(f => f.id === c.ifFieldId);
           const showValue = c.operator !== 'not_empty' && c.operator !== 'empty';
-          // For multiselect/checkbox: show options as datalist
           const hasOptions = ifField && ['multiselect','checkbox'].includes(ifField.type) && ifField.options?.length;
+          const act = c.action || 'show';
+          const actionDef = actions.find(a => a.v === act) || actions[0];
+          const needsTarget = true; // all actions need a target field
+          const needsWarningText = act === 'warning';
+          const needsSetValue = act === 'set_value';
           return `
-          <div style="background:white;border-radius:14px;padding:14px 16px;border:1px solid rgba(240,192,64,0.4);display:flex;align-items:center;gap:10px;flex-wrap:wrap;box-shadow:0 2px 8px rgba(0,0,0,0.04)">
+          <div style="background:white;border-radius:14px;padding:14px 16px;border:1px solid rgba(240,192,64,0.4);display:flex;align-items:center;gap:8px;flex-wrap:wrap;box-shadow:0 2px 8px rgba(0,0,0,0.04)">
             <span style="font-size:12px;font-weight:800;color:#92400E;white-space:nowrap">ALS</span>
-            <select class="form-control cond-if-field" data-ci="${ci}" style="flex:2;min-width:140px;font-size:13px">
+            <select class="form-control cond-if-field" data-ci="${ci}" style="flex:2;min-width:130px;font-size:13px">
               <option value="">-- Kies vraag --</option>
               ${triggerFields.map(f => `<option value="${f.id}" ${c.ifFieldId===f.id?'selected':''}>${esc(f.label.split('\n')[0])}</option>`).join('')}
             </select>
-            <select class="form-control cond-operator" data-ci="${ci}" style="flex:1;min-width:130px;font-size:13px">
+            <select class="form-control cond-operator" data-ci="${ci}" style="flex:1;min-width:120px;font-size:13px">
               ${operators.map(o => `<option value="${o.v}" ${c.operator===o.v?'selected':''}>${o.l}</option>`).join('')}
             </select>
             ${showValue ? `
-            <div style="flex:1;min-width:110px;position:relative">
+            <div style="flex:1;min-width:100px;position:relative">
               <input class="form-control cond-value" data-ci="${ci}" type="text" placeholder="Waarde..." value="${esc(c.value||'')}" style="font-size:13px" list="opts_${ci}">
               ${hasOptions ? `<datalist id="opts_${ci}">${ifField.options.map(o=>`<option value="${esc(o)}">`).join('')}</datalist>` : ''}
             </div>` : ''}
-            <span style="font-size:12px;font-weight:800;color:#0057B8;white-space:nowrap">→ TOON</span>
-            <select class="form-control cond-then-field" data-ci="${ci}" style="flex:2;min-width:140px;font-size:13px">
+            <select class="form-control cond-action" data-ci="${ci}" style="flex:1;min-width:155px;font-size:13px;font-weight:700;color:${actionDef.color}">
+              ${actions.map(a => `<option value="${a.v}" ${act===a.v?'selected':''}>${a.l}</option>`).join('')}
+            </select>
+            <select class="form-control cond-then-field" data-ci="${ci}" style="flex:2;min-width:130px;font-size:13px">
               <option value="">-- Kies veld --</option>
               ${targetFields.filter(f => f.id !== c.ifFieldId).map(f => `<option value="${f.id}" ${c.thenFieldId===f.id?'selected':''}>${esc(f.label.split('\n')[0])}</option>`).join('')}
             </select>
+            ${needsWarningText ? `
+            <input class="form-control cond-warning-text" data-ci="${ci}" type="text" placeholder="Waarschuwingstekst..." value="${esc(c.warningText||'')}" style="flex:3;min-width:160px;font-size:13px">` : ''}
+            ${needsSetValue ? `
+            <input class="form-control cond-set-value" data-ci="${ci}" type="text" placeholder="Stel in op waarde..." value="${esc(c.setValue||'')}" style="flex:2;min-width:130px;font-size:13px">` : ''}
             <button class="btn btn-danger btn-sm cond-del-btn" data-ci="${ci}" style="flex-shrink:0">🗑</button>
           </div>`;
         }).join('')}
       </div>`}
 
       <button class="btn btn-outline btn-sm" id="addConditionBtn" style="margin-top:12px;border-color:#F0C040;color:#92400E">+ Regel toevoegen</button>
-      <div style="font-size:11px;color:#B45309;margin-top:10px;opacity:0.8">
-        💡 Velden die in een "TOON"-regel staan zijn standaard verborgen. Ze worden zichtbaar zodra de bijbehorende voorwaarde geldt.
+      <div style="font-size:11px;color:#B45309;margin-top:10px;opacity:0.8;line-height:1.6">
+        💡 <strong>Toon/Verberg:</strong> veld is standaard verborgen, zichtbaar als conditie geldt. &nbsp;
+        <strong>Verplicht/Optioneel:</strong> maakt het veld dynamisch (niet-)verplicht. &nbsp;
+        <strong>Waarschuwing:</strong> toont een melding bij het veld. &nbsp;
+        <strong>Waarde instellen:</strong> vult het veld automatisch in als conditie geldt.
       </div>
     </div>
   </div>`;
@@ -3280,7 +3297,7 @@ function bindFormBuilder() {
   });
   document.getElementById('addConditionBtn')?.addEventListener('click', () => {
     if (!S.builderState.conditions) S.builderState.conditions = [];
-    S.builderState.conditions.push({ id: 'c_' + Date.now(), ifFieldId: '', operator: 'equals', value: '', thenFieldId: '' });
+    S.builderState.conditions.push({ id: 'c_' + Date.now(), ifFieldId: '', operator: 'equals', value: '', action: 'show', thenFieldId: '', warningText: '', setValue: '' });
     render();
   });
   document.querySelectorAll('.cond-del-btn').forEach(b => b.addEventListener('click', () => {
@@ -3298,6 +3315,15 @@ function bindFormBuilder() {
   }));
   document.querySelectorAll('.cond-then-field').forEach(sel => sel.addEventListener('change', e => {
     S.builderState.conditions[parseInt(e.target.dataset.ci)].thenFieldId = e.target.value; render();
+  }));
+  document.querySelectorAll('.cond-action').forEach(sel => sel.addEventListener('change', e => {
+    S.builderState.conditions[parseInt(e.target.dataset.ci)].action = e.target.value; render();
+  }));
+  document.querySelectorAll('.cond-warning-text').forEach(inp => inp.addEventListener('input', e => {
+    S.builderState.conditions[parseInt(e.target.dataset.ci)].warningText = e.target.value;
+  }));
+  document.querySelectorAll('.cond-set-value').forEach(inp => inp.addEventListener('input', e => {
+    S.builderState.conditions[parseInt(e.target.dataset.ci)].setValue = e.target.value;
   }));
 
   // Options
@@ -4250,25 +4276,77 @@ function fieldHasValue(f) {
   return val !== undefined && val !== null && val !== '';
 }
 
+// ── CONDITIONS RUNTIME HELPERS ─────────────────────────────────────────────
+function conditionMatches(c) {
+  const val = S.formValues[c.ifFieldId];
+  const actual = (val === undefined || val === null) ? '' : String(val).toLowerCase();
+  const cVal = (c.value || '').toLowerCase();
+  switch (c.operator) {
+    case 'equals':     return actual === cVal;
+    case 'not_equals': return actual !== cVal;
+    case 'contains':   return actual.includes(cVal);
+    case 'not_empty':  return actual !== '';
+    case 'empty':      return actual === '';
+    default: return true;
+  }
+}
+
 function fieldIsVisible(f, fields) {
   if (f.type === 'divider' || f.type === 'heading') return true;
   const form = S.fillingForm || S.builderState;
   const conditions = (form && form.conditions) || [];
-  const relevantConds = conditions.filter(c => c.thenFieldId === f.id && c.ifFieldId);
-  if (relevantConds.length === 0) return true; // geen conditie → altijd zichtbaar
-  return relevantConds.some(c => {
-    const val = S.formValues[c.ifFieldId];
-    const actual = (val === undefined || val === null) ? '' : String(val).toLowerCase();
-    const cVal = (c.value || '').toLowerCase();
-    switch (c.operator) {
-      case 'equals':     return actual === cVal;
-      case 'not_equals': return actual !== cVal;
-      case 'contains':   return actual.includes(cVal);
-      case 'not_empty':  return actual !== '';
-      case 'empty':      return actual === '';
-      default: return true;
+  // show conditions: field is hidden by default, shown when condition matches
+  const showConds = conditions.filter(c => c.thenFieldId === f.id && c.ifFieldId && (!c.action || c.action === 'show'));
+  // hide conditions: field is visible by default, hidden when condition matches
+  const hideConds = conditions.filter(c => c.thenFieldId === f.id && c.ifFieldId && c.action === 'hide');
+  let visible = true;
+  if (showConds.length > 0) {
+    visible = showConds.some(c => conditionMatches(c));
+  }
+  if (hideConds.length > 0 && hideConds.some(c => conditionMatches(c))) {
+    visible = false;
+  }
+  return visible;
+}
+
+function fieldIsRequired(f) {
+  if (!f) return false;
+  const form = S.fillingForm || S.builderState;
+  const conditions = (form && form.conditions) || [];
+  const requiredConds = conditions.filter(c => c.thenFieldId === f.id && c.ifFieldId && c.action === 'required');
+  const optionalConds = conditions.filter(c => c.thenFieldId === f.id && c.ifFieldId && c.action === 'optional');
+  // optional condition overrides required condition
+  if (optionalConds.some(c => conditionMatches(c))) return false;
+  if (requiredConds.some(c => conditionMatches(c))) return true;
+  return f.required || false;
+}
+
+function getFieldWarning(f) {
+  if (!f) return null;
+  const form = S.fillingForm || S.builderState;
+  const conditions = (form && form.conditions) || [];
+  const warnCond = conditions.find(c => c.thenFieldId === f.id && c.ifFieldId && c.action === 'warning' && conditionMatches(c));
+  return warnCond ? (warnCond.warningText || 'Let op dit veld.') : null;
+}
+
+function applySetValueConditions() {
+  const form = S.fillingForm;
+  if (!form) return false;
+  const setValConds = (form.conditions || []).filter(c => c.action === 'set_value' && c.thenFieldId && c.ifFieldId);
+  let changed = false;
+  setValConds.forEach(c => {
+    if (conditionMatches(c)) {
+      const target = (form.fields || []).find(f => f.id === c.thenFieldId);
+      if (target && !['photo', 'signature'].includes(target.type)) {
+        const newVal = c.setValue || '';
+        if (S.formValues[c.thenFieldId] !== newVal) {
+          S.formValues[c.thenFieldId] = newVal;
+          changed = true;
+        }
+      }
     }
   });
+  return changed;
 }
 
 function getNextIdx(from, fields) {
@@ -4359,12 +4437,12 @@ function renderFormFill() {
   </div>
 
   <div class="submit-wrap">
-    ${!currentHasValue && currentField?.required && !isLast ? `
+    ${!currentHasValue && fieldIsRequired(currentField) && !isLast ? `
     <div class="required-hint">⚠ Dit veld is verplicht — vul het in om verder te gaan.</div>` : ''}
     <div class="flex gap-2">
       ${idx > 0 ? `<button class="btn btn-ghost" id="prevFieldBtn" style="min-width:80px">← Terug</button>` : ''}
       ${!isLast ? `
-        <button class="btn btn-primary btn-lg" id="nextFieldBtn" style="flex:1" ${!currentHasValue && currentField?.required ? 'disabled' : ''}>
+        <button class="btn btn-primary btn-lg" id="nextFieldBtn" style="flex:1" ${!currentHasValue && fieldIsRequired(currentField) ? 'disabled' : ''}>
           Volgende →
         </button>` : `
         <button class="btn btn-primary btn-lg" id="submitFormBtn" style="flex:1" ${S.loading?'disabled':''}>
@@ -4426,7 +4504,12 @@ function renderFormFillClassic() {
 
 function renderFormField(f) {
   const val = S.formValues[f.id];
-  const reqMark = f.required ? ' <span style="color:var(--danger)">*</span>' : '';
+  const isReq = fieldIsRequired(f);
+  const reqMark = isReq ? ' <span style="color:var(--danger)">*</span>' : '';
+  const warning = getFieldWarning(f);
+  const warningHtml = warning ? `<div style="margin-top:8px;padding:9px 12px;background:#FEF3C7;border:1px solid #F0C040;border-radius:8px;font-size:13px;color:#92400E;display:flex;align-items:flex-start;gap:7px;line-height:1.4"><span style="flex-shrink:0">⚠️</span><span>${esc(warning)}</span></div>` : '';
+
+  const wrap = (html) => warningHtml ? html + warningHtml : html;
 
   if (f.type === 'divider') {
     return `<hr style="border:none;border-top:2px solid var(--border);margin:8px 0;border-radius:2px">`;
@@ -4457,46 +4540,46 @@ function renderFormField(f) {
 
   if (f.type === 'text' || f.type === 'email' || f.type === 'phone' || f.type === 'number') {
     const inputType = f.type === 'phone' ? 'tel' : f.type;
-    return `<div class="form-group"><label>${esc(f.label)}${reqMark}</label>
-      <input class="form-control fill-input" data-id="${f.id}" type="${inputType}" value="${esc(val||'')}" placeholder="${esc(f.label)}"></div>`;
+    return wrap(`<div class="form-group"><label>${esc(f.label)}${reqMark}</label>
+      <input class="form-control fill-input" data-id="${f.id}" type="${inputType}" value="${esc(val||'')}" placeholder="${esc(f.label)}"></div>`);
   }
   if (f.type === 'textarea') {
-    return `<div class="form-group"><label>${esc(f.label)}${reqMark}</label>
-      <textarea class="form-control fill-input" data-id="${f.id}" placeholder="${esc(f.label)}">${esc(val||'')}</textarea></div>`;
+    return wrap(`<div class="form-group"><label>${esc(f.label)}${reqMark}</label>
+      <textarea class="form-control fill-input" data-id="${f.id}" placeholder="${esc(f.label)}">${esc(val||'')}</textarea></div>`);
   }
   if (f.type === 'date') {
-    return `<div class="form-group"><label>${esc(f.label)}${reqMark}</label>
-      <input class="form-control fill-input" data-id="${f.id}" type="date" value="${esc(val||'')}"></div>`;
+    return wrap(`<div class="form-group"><label>${esc(f.label)}${reqMark}</label>
+      <input class="form-control fill-input" data-id="${f.id}" type="date" value="${esc(val||'')}"></div>`);
   }
   if (f.type === 'multiselect') {
     const opts = f.options || [];
-    return `<div class="form-group"><label>${esc(f.label)}${reqMark}</label>
+    return wrap(`<div class="form-group"><label>${esc(f.label)}${reqMark}</label>
       <div class="check-group">
         ${opts.map(o => `<div class="check-item"><input type="radio" id="r_${f.id}_${esc(o)}" name="r_${f.id}" class="fill-radio" data-id="${f.id}" value="${esc(o)}" ${val===o?'checked':''}><label for="r_${f.id}_${esc(o)}">${esc(o)}</label></div>`).join('')}
-      </div></div>`;
+      </div></div>`);
   }
   if (f.type === 'checkbox') {
     const opts = f.options || [];
     const checked = Array.isArray(val) ? val : [];
-    return `<div class="form-group"><label>${esc(f.label)}${reqMark}</label>
+    return wrap(`<div class="form-group"><label>${esc(f.label)}${reqMark}</label>
       <div class="check-group">
         ${opts.map(o => `<div class="check-item"><input type="checkbox" id="c_${f.id}_${esc(o)}" class="fill-checkbox" data-id="${f.id}" value="${esc(o)}" ${checked.includes(o)?'checked':''}><label for="c_${f.id}_${esc(o)}">${esc(o)}</label></div>`).join('')}
-      </div></div>`;
+      </div></div>`);
   }
   if (f.type === 'list') {
     const items = S.listItems[f.listId] || [];
-    return `<div class="form-group">
+    return wrap(`<div class="form-group">
       <label>${esc(f.label)}${reqMark}</label>
       <div class="dropdown-wrap" id="ddwrap_${f.id}">
         <input class="form-control dd-search" data-id="${f.id}" type="text" placeholder="Zoeken of selecteren..." value="${esc(val||'')}" autocomplete="off" readonly>
         <div class="dropdown-list hidden" id="ddlist_${f.id}">
           ${items.map(item => `<div class="dropdown-item ${val===item?'selected':''}" data-id="${f.id}" data-val="${esc(item)}">${esc(item)}</div>`).join('')}
         </div>
-      </div></div>`;
+      </div></div>`);
   }
   if (f.type === 'signature') {
     const hasSig = !!S.signatureData;
-    return `<div class="form-group">
+    return wrap(`<div class="form-group">
       <label>${esc(f.label)}${reqMark}</label>
       <div class="sig-wrap">
         <canvas class="sig-canvas" id="sig_${f.id}" data-id="${f.id}" width="600" height="160"></canvas>
@@ -4504,10 +4587,10 @@ function renderFormField(f) {
           <button class="btn btn-ghost btn-sm sig-clear-btn" data-id="${f.id}">✕ Wissen</button>
           ${hasSig ? '<span class="text-sm" style="color:var(--success)">✓ Handtekening gezet</span>' : '<span class="text-sm text-muted">Teken hier je handtekening</span>'}
         </div>
-      </div></div>`;
+      </div></div>`);
   }
   if (f.type === 'photo') {
-    return `<div class="form-group">
+    return wrap(`<div class="form-group">
       <label>${esc(f.label)}${reqMark}</label>
       <input type="file" accept="image/*" capture="environment" multiple id="photo_${f.id}" data-id="${f.id}" class="fill-photo hidden">
       <button class="btn btn-outline" onclick="document.getElementById('photo_${f.id}').click()">📷 Foto('s) toevoegen</button>
@@ -4518,7 +4601,7 @@ function renderFormField(f) {
             <button class="photo-remove" data-pi="${i}">×</button>
           </div>`).join('')}
       </div>
-    </div>`;
+    </div>`);
   }
   return '';
 }
@@ -4533,10 +4616,11 @@ function bindMonteur2() {
   document.getElementById('nextFieldBtn')?.addEventListener('click', () => {
     const fields = S.fillingForm.fields || [];
     const current = fields[S.currentFieldIdx];
-    if (current?.required && !fieldHasValue(current)) {
+    if (fieldIsRequired(current) && !fieldHasValue(current)) {
       S.error = `Veld "${current.label.split('\n')[0]}" is verplicht.`; render(); return;
     }
     S.error = null;
+    applySetValueConditions();
     S.currentFieldIdx = getNextIdx(S.currentFieldIdx, fields);
     render();
   });
@@ -4567,23 +4651,24 @@ function bindMonteur2() {
     S.formValues[e.target.dataset.id] = e.target.value;
     autosave();
     // Update next button state without full re-render
+    applySetValueConditions();
     const nextBtn = document.getElementById('nextFieldBtn');
     if (nextBtn) {
       const fields = S.fillingForm.fields || [];
       const current = fields[S.currentFieldIdx];
-      nextBtn.disabled = current?.required && !fieldHasValue(current);
+      nextBtn.disabled = fieldIsRequired(current) && !fieldHasValue(current);
     }
   }));
   // Radio
   document.querySelectorAll('.fill-radio').forEach(el => el.addEventListener('change', e => {
-    if (e.target.checked) { S.formValues[e.target.dataset.id] = e.target.value; autosave(); autoNext(); }
+    if (e.target.checked) { S.formValues[e.target.dataset.id] = e.target.value; autosave(); applySetValueConditions(); autoNext(); }
   }));
   // Checkbox
   document.querySelectorAll('.fill-checkbox').forEach(el => el.addEventListener('change', () => {
     const id = el.dataset.id;
     const checked = Array.from(document.querySelectorAll(`.fill-checkbox[data-id="${id}"]:checked`)).map(c => c.value);
     S.formValues[id] = checked;
-    autosave();
+    autosave(); applySetValueConditions();
   }));
 
   // Dropdown lists
@@ -4721,7 +4806,7 @@ async function submitForm() {
 
   // Validate required fields (skip hidden fields)
   for (const field of (form.fields||[])) {
-    if (!field.required) continue;
+    if (!fieldIsRequired(field)) continue;
     if (!fieldIsVisible(field, form.fields||[])) continue;
     if (field.type === 'photo') {
       if (S.photoFiles.length === 0) { S.error = `Veld "${field.label.split('\n')[0]}" is verplicht — voeg minstens één foto toe.`; render(); return; }
