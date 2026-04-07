@@ -3138,11 +3138,9 @@ function renderFieldCard(f, i, labels) {
           : `<input class="form-control field-label" data-idx="${i}" type="text" placeholder="Veldnaam" value="${esc(f.label||'')}">`
         }
       </div>
-      <div class="form-group">
+      <div class="form-group" style="min-width:110px;flex-shrink:0">
         <label>Type</label>
-        <select class="form-control field-type" data-idx="${i}">
-          ${Object.entries(labels).map(([v,t]) => `<option value="${v}" ${f.type===v?'selected':''}>${t}</option>`).join('')}
-        </select>
+        <div style="font-size:13px;font-weight:600;color:var(--blue);padding:9px 12px;background:var(--blue-light);border-radius:var(--radius-sm);border:1px solid rgba(0,87,184,0.15)">${labels[f.type] || f.type}</div>
       </div>
     </div>
     ${!isHeading ? `
@@ -3274,13 +3272,7 @@ function bindFormBuilder() {
     if (card) { const h = card.querySelector('strong'); if (h) h.textContent = e.target.value || 'Naamloos veld'; }
     updatePreview();
   }));
-  document.querySelectorAll('.field-type').forEach(sel => sel.addEventListener('change', e => {
-    const idx = parseInt(e.target.dataset.idx);
-    S.builderState.fields[idx].type = e.target.value;
-    if (!['multiselect','checkbox'].includes(e.target.value)) S.builderState.fields[idx].options = [];
-    if (e.target.value !== 'list') delete S.builderState.fields[idx].listId;
-    render();
-  }));
+  // (type-selector verwijderd — type is fixed na toevoegen)
   document.querySelectorAll('.field-required').forEach(cb => cb.addEventListener('change', e => {
     S.builderState.fields[parseInt(e.target.dataset.idx)].required = e.target.checked;
   }));
