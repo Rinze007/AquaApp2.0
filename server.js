@@ -68,41 +68,67 @@ function writeJSON(file, data) {
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 if (!fs.existsSync(listsDir)) fs.mkdirSync(listsDir, { recursive: true });
 
-const testFormId = 'test-form-default-id';
+const demoFormId = 'demo-form-all-fields';
 if (!fs.existsSync(path.join(dataDir, 'users.json'))) {
+  const hash1 = bcrypt.hashSync('1', 10);
+  const davyId = uuidv4();
+  const dummyNames = [
+    ['Lars','van den Berg'],['Sander','Hoekstra'],['Tim','de Vries'],['Joost','Vermeer'],['Rick','Bakker'],
+    ['Niels','Smit'],['Tom','de Groot'],['Kevin','Janssen'],['Bas','Peters'],['Dylan','Hendriks'],
+    ['Robin','van Dijk'],['Mike','Visser'],['Jesse','de Jong'],['Stefan','Mulder'],['Arjan','Bos'],
+    ['Mark','van Leeuwen'],['Ruben','Boer'],['Dennis','Brouwer'],['Patrick','Meijer'],['Frank','Vrijman'],
+    ['Erwin','Kok'],['Daan','Jacobs'],['Luc','Willems'],['Rik','Postma'],['Glenn','Timmerman']
+  ];
   writeJSON('users.json', [
-    {
-      id: uuidv4(),
-      username: 'admin',
-      password: bcrypt.hashSync('admin123', 10),
-      name: 'Beheerder',
-      role: 'admin',
-      allowedForms: []
-    },
-    {
-      id: uuidv4(),
-      username: 'Monteur',
-      password: bcrypt.hashSync('1', 10),
-      name: 'Monteur',
-      role: 'monteur',
-      allowedForms: [testFormId]
-    }
+    { id: uuidv4(), username: 'Admin', password: hash1, name: 'Beheerder', role: 'admin',   photoUrl: null, allowedForms: [] },
+    { id: davyId,   username: 'Davy',  password: hash1, name: 'Davy Jansen', role: 'monteur', photoUrl: null, allowedForms: [demoFormId] },
+    ...dummyNames.map(([fn, ln]) => ({
+      id: uuidv4(), username: 'Dummy' + fn, password: hash1,
+      name: fn + ' ' + ln, role: 'monteur', photoUrl: null, allowedForms: [demoFormId]
+    }))
   ]);
-  console.log('Standaard gebruikers aangemaakt.');
+  console.log('Standaard gebruikers aangemaakt (Admin + Davy + 25 dummies).');
 }
 if (!fs.existsSync(path.join(dataDir, 'forms.json'))) {
   writeJSON('forms.json', [{
-    id: testFormId,
-    name: 'TEST FORM',
+    id: demoFormId,
+    name: 'Demo Formulier — Alle Veldtypes',
     email: 'r.zijlstra@aqua.nl',
-    fields: [
-      { id: 'f_datum', type: 'date', label: 'Datum', required: true },
-      { id: 'f_email', type: 'email', label: 'Email', required: false },
-      { id: 'f_foto', type: 'photo', label: 'Foto', required: false }
+    mode: 'classic',
+    createdAt: new Date().toISOString(),
+    conditions: [
+      { id: 'c1', ifFieldId: 'f_naam',   operator: 'empty',     value: '', action: 'hide',      thenFieldId: 'f_email2',   warningText: '', setValue: '' },
+      { id: 'c2', ifFieldId: 'f_naam',   operator: 'not_empty', value: '', action: 'required',  thenFieldId: 'f_tel',      warningText: '', setValue: '' },
+      { id: 'c3', ifFieldId: 'f_multi',  operator: 'equals',    value: 'Optie C', action: 'warning',   thenFieldId: 'f_opmerk',   warningText: 'Let op: Optie C vereist extra toelichting!', setValue: '' },
+      { id: 'c4', ifFieldId: 'f_multi',  operator: 'equals',    value: 'Optie A', action: 'set_value', thenFieldId: 'f_autoveld', warningText: '', setValue: 'Automatisch ingevuld via conditie' },
+      { id: 'c5', ifFieldId: 'f_multi',  operator: 'equals',    value: 'Optie B', action: 'show',      thenFieldId: 'f_extraveld', warningText: '', setValue: '' },
+      { id: 'c6', ifFieldId: 'f_multi',  operator: 'equals',    value: 'Optie C', action: 'show',      thenFieldId: 'f_extraveld', warningText: '', setValue: '' },
     ],
-    createdAt: new Date().toISOString()
+    fields: [
+      { id: 'f_kop1',     type: 'heading',     label: 'Contactgegevens\nVul hieronder je naam en contactgegevens in.', required: false, options: [] },
+      { id: 'f_naam',     type: 'text',        label: 'Naam',                required: true,  options: [] },
+      { id: 'f_email2',   type: 'email',       label: 'E-mailadres',         required: false, options: [] },
+      { id: 'f_tel',      type: 'phone',       label: 'Telefoonnummer',      required: false, options: [] },
+      { id: 'f_div1',     type: 'divider',     label: '', required: false, options: [] },
+      { id: 'f_kop2',     type: 'heading',     label: 'Datum & Getal',       required: false, options: [] },
+      { id: 'f_datum',    type: 'date',        label: 'Datum van uitvoering', required: true, options: [] },
+      { id: 'f_num',      type: 'number',      label: 'Aantal eenheden',     required: false, options: [] },
+      { id: 'f_div2',     type: 'divider',     label: '', required: false, options: [] },
+      { id: 'f_kop3',     type: 'heading',     label: 'Keuze & Selectie\n• Selecteer één optie\n• Vink alles aan wat van toepassing is', required: false, options: [] },
+      { id: 'f_multi',    type: 'multiselect', label: 'Enkelvoudige keuze (radio)', required: true,  options: ['Optie A','Optie B','Optie C','Optie D'] },
+      { id: 'f_check',    type: 'checkbox',    label: 'Meerdere keuzes (checkbox)', required: false, options: ['Punt 1','Punt 2','Punt 3','Punt 4'] },
+      { id: 'f_opmerk',   type: 'textarea',    label: 'Opmerkingen',         required: false, options: [] },
+      { id: 'f_div3',     type: 'divider',     label: '', required: false, options: [] },
+      { id: 'f_kop4',     type: 'heading',     label: 'Conditionele velden\nDeze velden reageren dynamisch op je keuze hierboven.', required: false, options: [] },
+      { id: 'f_extraveld',type: 'text',        label: 'Extra toelichting (zichtbaar bij Optie B of C)', required: false, options: [] },
+      { id: 'f_autoveld', type: 'text',        label: 'Automatisch veld (ingevuld bij Optie A)',        required: false, options: [] },
+      { id: 'f_div4',     type: 'divider',     label: '', required: false, options: [] },
+      { id: 'f_kop5',     type: 'heading',     label: 'Foto & Handtekening', required: false, options: [] },
+      { id: 'f_foto',     type: 'photo',       label: "Situatiefoto's",      required: false, options: [] },
+      { id: 'f_sig',      type: 'signature',   label: 'Handtekening klant',  required: false, options: [] },
+    ]
   }]);
-  console.log('Standaard TEST FORM aangemaakt.');
+  console.log('Standaard demo formulier aangemaakt (alle veldtypes).');
 }
 if (!fs.existsSync(path.join(dataDir, 'lists.json'))) writeJSON('lists.json', []);
 
