@@ -4634,10 +4634,15 @@ function bindMonteur2() {
 
   // Automatisch doorschakelen bij invullen (radio/list)
   const autoNext = () => {
+    if (!S.fillingForm) return; // guard: submit kan fillingForm tussentijds op null zetten
     const fields = S.fillingForm.fields || [];
     const current = fields[S.currentFieldIdx];
     if (current && fieldHasValue(current) && !isLastVisible(S.currentFieldIdx, fields)) {
-      setTimeout(() => { S.currentFieldIdx = getNextIdx(S.currentFieldIdx, fields); render(); }, 300);
+      setTimeout(() => {
+        if (!S.fillingForm) return; // opnieuw checken na 300ms timeout
+        S.currentFieldIdx = getNextIdx(S.currentFieldIdx, fields);
+        render();
+      }, 300);
     }
   };
 
@@ -4828,14 +4833,27 @@ async function submitForm() {
     const result = await api('POST', `/api/submit/${form.id}`, fd, true);
     clearDraft(form.id);
     S.loading = false;
-    // Voeg de nieuwe inzending direct toe aan de lokale lijst zodat history meteen klopt
-    if (result && result.id) {
-      S.mySubmissions = [result, ...(S.mySubmissions || [])];
-    }
-    S.view = 'submitted';
-    S.lastSubmission = { formName: form.name, values: { ...S.formValues }, fields: form.fields || [] };
+
+    // Sla bevestigingsdata op vóórdat we state resetten
+    const lastSub = { formName: form.name, values: { ...S.formValues }, fields: form.fields || [] };
+
+    // Reset formulier state
     S.fillingForm = null;
     S.formValues = {}; S.signatureData = null; S.photoFiles = [];
+
+    // Herlaad inzendingen vanuit server zodat de lijst altijd klopt
+    try {
+      const freshSubs = await api('GET', '/api/submissions');
+      S.mySubmissions = freshSubs.sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
+    } catch {
+      // Fallback: voeg lokaal toe als server niet bereikbaar is
+      if (result && result.id) {
+        S.mySubmissions = [result, ...(S.mySubmissions || [])];
+      }
+    }
+
+    S.view = 'submitted';
+    S.lastSubmission = lastSub;
     render();
   } catch(e) { S.error = e.message; S.loading = false; render(); }
 }
