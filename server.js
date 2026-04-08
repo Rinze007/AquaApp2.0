@@ -768,6 +768,22 @@ async function sendEmail(form, formData, photos, signature, user) {
   if (error) throw new Error(error.message);
 }
 
+// ===== DEBUG (tijdelijk) =====
+app.get('/api/debug-file', (req, res) => {
+  const p = path.join(__dirname, 'public', 'index.html');
+  try {
+    const stat = fs.statSync(p);
+    const content = fs.readFileSync(p, 'utf8');
+    res.json({
+      path: p,
+      size: stat.size,
+      hasDashboard: content.includes('renderAdminDashboard'),
+      adminTabDefault: (content.match(/adminTab:\s*'(\w+)'/) || [])[1],
+      firstLine: content.split('\n')[0].substring(0, 100)
+    });
+  } catch(e) { res.json({ error: e.message }); }
+});
+
 // ===== SPA FALLBACK =====
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
